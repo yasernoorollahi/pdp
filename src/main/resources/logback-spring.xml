@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <property name="LOG_PATH" value="logs"/>
+
+    <!-- ================= GENERAL APPLICATION LOG ================= -->
+    <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>14</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger{36} - %msg%n</pattern>
+
+        </encoder>
+    </appender>
+
+    <!-- ================= ERROR LOG ================= -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger{36} - %msg%n</pattern>
+
+        </encoder>
+    </appender>
+
+    <!-- ================= SQL LOG ================= -->
+    <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/sql.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/sql.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%X{traceId}] %-5level %msg%n</pattern>
+
+        </encoder>
+    </appender>
+
+    <!-- ================= TRANSACTION LOG ================= -->
+    <appender name="TX_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/transaction.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/transaction.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>14</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <!-- ================= JOB LOG ================= -->
+    <appender name="JOB_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/jobs.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/jobs.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>14</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <!-- ================= RATE LIMIT LOG ================= -->
+<!--    <appender name="RATE_LIMIT_FILE"-->
+<!--              class="ch.qos.logback.core.rolling.RollingFileAppender">-->
+<!--        <file>${LOG_PATH}/rate-limit.log</file>-->
+<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+<!--            <fileNamePattern>${LOG_PATH}/rate-limit.%d{yyyy-MM-dd}.log</fileNamePattern>-->
+<!--            <maxHistory>14</maxHistory>-->
+<!--        </rollingPolicy>-->
+<!--        <encoder>-->
+<!--            <pattern>%d{HH:mm:ss.SSS} [%X{traceId}] %-5level %msg%n</pattern>-->
+<!--        </encoder>-->
+<!--    </appender>-->
+
+<!--    <logger name="RATE_LIMIT" level="WARN" additivity="false">-->
+<!--        <appender-ref ref="RATE_LIMIT_FILE"/>-->
+<!--    </logger>-->
+
+
+    <!-- ================= CONSOLE ================= -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%clr(%d{HH:mm:ss.SSS}){faint} [%X{traceId}] %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+
+    <!-- ================= LOGGERS ================= -->
+
+    <!-- Hibernate SQL -->
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="SQL_FILE"/>
+    </logger>
+
+    <!-- Transaction logs -->
+    <logger name="org.springframework.transaction" level="TRACE" additivity="false">
+        <appender-ref ref="TX_FILE"/>
+    </logger>
+
+
+    <logger name="com.datarain.pdp.job" level="INFO" additivity="false">
+        <appender-ref ref="JOB_FILE"/>
+    </logger>
+
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="APP_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+
+</configuration>

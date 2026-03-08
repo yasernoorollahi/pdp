@@ -1,0 +1,9 @@
+# اضافه شد: تنظیمات Prometheus برای scrape کردن metrics اپلیکیشن
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'pdp-app'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['app:8080']
