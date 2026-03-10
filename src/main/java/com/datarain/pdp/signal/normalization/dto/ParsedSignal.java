@@ -9,6 +9,8 @@ public record ParsedSignal(
         List<IntentSignal> intents,
         List<PreferenceSignal> preferences,
         List<CognitiveLanguageSignal> cognitiveLanguages,
+        List<ToolSignal> tools,
+        List<ProjectSignal> projects,
         CognitiveSignal cognitive,
         ToneSignal tone,
         ContextSignal context

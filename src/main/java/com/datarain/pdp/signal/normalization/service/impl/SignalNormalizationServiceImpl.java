@@ -14,9 +14,11 @@ import com.datarain.pdp.signal.normalization.service.EntityNormalizationService;
 import com.datarain.pdp.signal.normalization.service.IntentNormalizationService;
 import com.datarain.pdp.signal.normalization.service.MetricsAggregationService;
 import com.datarain.pdp.signal.normalization.service.PreferenceNormalizationService;
+import com.datarain.pdp.signal.normalization.service.ProjectNormalizationService;
 import com.datarain.pdp.signal.normalization.service.SignalNormalizationService;
 import com.datarain.pdp.signal.normalization.service.SignalParser;
 import com.datarain.pdp.signal.normalization.service.ToneNormalizationService;
+import com.datarain.pdp.signal.normalization.service.ToolNormalizationService;
 import com.datarain.pdp.signal.normalization.service.TopicNormalizationService;
 import com.datarain.pdp.signal.repository.MessageSignalRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,8 @@ public class SignalNormalizationServiceImpl implements SignalNormalizationServic
     private final ToneNormalizationService toneNormalizationService;
     private final ContextNormalizationService contextNormalizationService;
     private final CognitiveLanguageNormalizationService cognitiveLanguageNormalizationService;
+    private final ToolNormalizationService toolNormalizationService;
+    private final ProjectNormalizationService projectNormalizationService;
     private final MetricsAggregationService metricsAggregationService;
     private final SecurityAuditService securityAuditService;
     private final PdpMetrics metrics;
@@ -92,6 +96,8 @@ public class SignalNormalizationServiceImpl implements SignalNormalizationServic
                 int toneCount = toneNormalizationService.normalize(signal, parsedSignal);
                 int contextCount = contextNormalizationService.normalize(signal, parsedSignal);
                 int cognitiveLanguageCount = cognitiveLanguageNormalizationService.normalize(signal, parsedSignal);
+                int toolCount = toolNormalizationService.normalize(signal, parsedSignal);
+                int projectCount = projectNormalizationService.normalize(signal, parsedSignal);
                 metricsAggregationService.aggregate(signal, parsedSignal);
 
                 messageSignalRepository.markNormalized(signalId, Instant.now(), normalizationVersion);
@@ -113,6 +119,8 @@ public class SignalNormalizationServiceImpl implements SignalNormalizationServic
                         .addKeyValue("toneCount", toneCount)
                         .addKeyValue("contextCount", contextCount)
                         .addKeyValue("cognitiveLanguageCount", cognitiveLanguageCount)
+                        .addKeyValue("toolCount", toolCount)
+                        .addKeyValue("projectCount", projectCount)
                         .addKeyValue("traceId", traceId)
                         .log("Signal normalization completed");
 

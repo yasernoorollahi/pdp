@@ -9,8 +9,10 @@ import com.datarain.pdp.signal.normalization.dto.EntitySignal;
 import com.datarain.pdp.signal.normalization.dto.IntentSignal;
 import com.datarain.pdp.signal.normalization.dto.ParsedSignal;
 import com.datarain.pdp.signal.normalization.dto.PreferenceSignal;
+import com.datarain.pdp.signal.normalization.dto.ProjectSignal;
 import com.datarain.pdp.signal.normalization.dto.TopicSignal;
 import com.datarain.pdp.signal.normalization.dto.ToneSignal;
+import com.datarain.pdp.signal.normalization.dto.ToolSignal;
 import com.datarain.pdp.signal.normalization.entity.CognitiveLanguageType;
 import com.datarain.pdp.signal.normalization.entity.IntentType;
 import com.datarain.pdp.signal.normalization.entity.PreferenceType;
@@ -35,12 +37,14 @@ public class SignalParser {
         List<IntentSignal> intents = new ArrayList<>();
         List<PreferenceSignal> preferences = new ArrayList<>();
         List<CognitiveLanguageSignal> cognitiveLanguages = new ArrayList<>();
+        List<ToolSignal> tools = new ArrayList<>();
+        List<ProjectSignal> projects = new ArrayList<>();
         ToneSignal toneSignal = new ToneSignal(null, null, null, null, null);
         CognitiveSignal cognitiveSignal = new CognitiveSignal(null, null, null);
         ContextSignal contextSignal = new ContextSignal(null);
 
         if (root != null && !root.isMissingNode()) {
-            ParseState state = new ParseState(entities, activities, topicSignals, intents, preferences, cognitiveLanguages, toneSignal, cognitiveSignal, contextSignal);
+            ParseState state = new ParseState(entities, activities, topicSignals, intents, preferences, cognitiveLanguages, tools, projects, toneSignal, cognitiveSignal, contextSignal);
             collectRecursive(root, state);
             toneSignal = state.tone;
             cognitiveSignal = state.cognitive;
@@ -54,6 +58,8 @@ public class SignalParser {
                 Collections.unmodifiableList(intents),
                 Collections.unmodifiableList(preferences),
                 Collections.unmodifiableList(cognitiveLanguages),
+                Collections.unmodifiableList(tools),
+                Collections.unmodifiableList(projects),
                 cognitiveSignal,
                 toneSignal,
                 contextSignal
@@ -92,8 +98,14 @@ public class SignalParser {
                     case "entities" -> state.entities.addAll(parseEntities(value, UserEntityType.PERSON));
                     case "actors" -> state.entities.addAll(parseEntities(value, UserEntityType.PERSON));
                     case "locations" -> state.entities.addAll(parseEntities(value, UserEntityType.LOCATION));
-                    case "projects" -> state.entities.addAll(parseEntities(value, UserEntityType.PROJECT));
-                    case "tools" -> state.entities.addAll(parseEntities(value, UserEntityType.TOOL));
+                    case "projects" -> {
+                        state.entities.addAll(parseEntities(value, UserEntityType.PROJECT));
+                        state.projects.addAll(parseProjects(value));
+                    }
+                    case "tools" -> {
+                        state.entities.addAll(parseEntities(value, UserEntityType.TOOL));
+                        state.tools.addAll(parseTools(value));
+                    }
                     case "activities" -> state.activities.addAll(parseActivities(value));
                     case "topic_tags" -> state.topics.addAll(parseTopics(value, false));
                     case "domain_classification" -> state.topics.addAll(parseTopics(value, true));
@@ -298,6 +310,8 @@ public class SignalParser {
         private final List<IntentSignal> intents;
         private final List<PreferenceSignal> preferences;
         private final List<CognitiveLanguageSignal> cognitiveLanguages;
+        private final List<ToolSignal> tools;
+        private final List<ProjectSignal> projects;
         private ToneSignal tone;
         private CognitiveSignal cognitive;
         private ContextSignal context;
@@ -308,6 +322,8 @@ public class SignalParser {
                            List<IntentSignal> intents,
                            List<PreferenceSignal> preferences,
                            List<CognitiveLanguageSignal> cognitiveLanguages,
+                           List<ToolSignal> tools,
+                           List<ProjectSignal> projects,
                            ToneSignal tone,
                            CognitiveSignal cognitive,
                            ContextSignal context) {
@@ -317,6 +333,8 @@ public class SignalParser {
             this.intents = intents;
             this.preferences = preferences;
             this.cognitiveLanguages = cognitiveLanguages;
+            this.tools = tools;
+            this.projects = projects;
             this.tone = tone;
             this.cognitive = cognitive;
             this.context = context;
@@ -334,6 +352,46 @@ public class SignalParser {
                 continue;
             }
             results.add(new PreferenceSignal(type, value.trim()));
+        }
+        return results;
+    }
+
+    private List<ToolSignal> parseTools(JsonNode arrayNode) {
+        if (arrayNode == null || !arrayNode.isArray()) {
+            return List.of();
+        }
+        List<ToolSignal> results = new ArrayList<>();
+        for (JsonNode node : arrayNode) {
+            String name = readText(node, "name", "value", "label", "tool");
+            if (name == null || name.isBlank()) {
+                continue;
+            }
+            String normalized = readText(node, "normalized_name", "canonical_name", "canonical");
+            if (normalized == null || normalized.isBlank()) {
+                normalized = normalizeCanonical(name);
+            }
+            String source = readText(node, "source");
+            results.add(new ToolSignal(name.trim(), normalized, source));
+        }
+        return results;
+    }
+
+    private List<ProjectSignal> parseProjects(JsonNode arrayNode) {
+        if (arrayNode == null || !arrayNode.isArray()) {
+            return List.of();
+        }
+        List<ProjectSignal> results = new ArrayList<>();
+        for (JsonNode node : arrayNode) {
+            String name = readText(node, "name", "value", "label", "project");
+            if (name == null || name.isBlank()) {
+                continue;
+            }
+            String normalized = readText(node, "normalized_name", "canonical_name", "canonical");
+            if (normalized == null || normalized.isBlank()) {
+                normalized = normalizeCanonical(name);
+            }
+            String source = readText(node, "source");
+            results.add(new ProjectSignal(name.trim(), normalized, source));
         }
         return results;
     }
