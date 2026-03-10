@@ -7,7 +7,7 @@ jobs.user-message-analysis.enabled: true
 jobs.user-message-analysis.batch-size: 50
 jobs.user-message-analysis.cron: "0 */2 * * * ?"
 jobs.ai-signal-engine.enabled: true
-jobs.ai-signal-engine.batch-size: 5
+jobs.ai-signal-engine.batch-size: 1
 jobs.ai-signal-engine.max-retries: 3
 jobs.ai-signal-engine.cron: "0 */3 * * * ?"
 jobs.ai-signal-engine.pipeline-version: "ai-signal-engine-v1"
