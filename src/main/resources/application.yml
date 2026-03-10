@@ -5,12 +5,19 @@ jobs.refresh-token.enabled: true
 jobs.notification-email.enabled: true
 jobs.user-message-analysis.enabled: true
 jobs.user-message-analysis.batch-size: 50
-jobs.user-message-analysis.cron: "0 */2 * * * ?"
+jobs.user-message-analysis.cron: "0 */1 * * * ?"
 jobs.ai-signal-engine.enabled: true
 jobs.ai-signal-engine.batch-size: 1
 jobs.ai-signal-engine.max-retries: 3
 jobs.ai-signal-engine.cron: "0 */3 * * * ?"
 jobs.ai-signal-engine.pipeline-version: "ai-signal-engine-v1"
+
+# Signal Normalization Job Config
+jobs.signal-normalization.enabled: true
+jobs.signal-normalization.batch-size: 100
+jobs.signal-normalization.delay-ms: 5000
+jobs.signal-normalization.version: 1
+
 jobs.test-data.enabled: true
 jobs.test-data.force: false
 jobs.test-data.users: 50

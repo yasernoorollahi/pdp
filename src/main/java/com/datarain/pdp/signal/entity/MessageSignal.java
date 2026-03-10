@@ -12,6 +12,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -44,4 +45,16 @@ public class MessageSignal extends AuditableEntity {
 
     @Column(name = "pipeline_version", length = 50)
     private String pipelineVersion;
+
+    @Column(name = "normalized", nullable = false)
+    private boolean normalized = false;
+
+    @Column(name = "normalization_started_at")
+    private Instant normalizationStartedAt;
+
+    @Column(name = "normalized_at")
+    private Instant normalizedAt;
+
+    @Column(name = "normalization_version")
+    private Integer normalizationVersion;
 }

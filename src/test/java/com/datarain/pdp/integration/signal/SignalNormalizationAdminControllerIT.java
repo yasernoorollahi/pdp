@@ -7,20 +7,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import com.datarain.pdp.support.AbstractIT;
 import org.springframework.test.web.servlet.MockMvc;
 
-@Disabled("Integration test skeleton - implement with seeded ROLE_ADMIN token and extraction service")
+@Disabled("Integration test skeleton - implement with seeded ROLE_ADMIN token and test signals")
 @AutoConfigureMockMvc
-class AiSignalEngineAdminControllerIT extends AbstractIT {
+class SignalNormalizationAdminControllerIT extends AbstractIT {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void shouldRunAiSignalEngineAsAdmin() {
-        // TODO implement
-    }
-
-    @Test
-    void shouldListSignalsWithPagination() {
+    void shouldRunSignalNormalizationAsAdmin() {
         // TODO implement
     }
 }

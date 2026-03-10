@@ -4,7 +4,7 @@ import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.datarain.pdp.support.AbstractIT;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -18,10 +18,9 @@ import static org.hamcrest.Matchers.equalTo;
 
 
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AuthFlowRestIT {
+class AuthFlowRestIT extends AbstractIT {
 
     @LocalServerPort
     int port;
@@ -84,4 +83,3 @@ class AuthFlowRestIT {
 //                .statusCode(401); / چون در واقعیت اکسس توکن هنوز تا ۱۵ دقیقه دسترسی داره بعدا باید درستش کنم
     }
 }
-

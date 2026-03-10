@@ -33,6 +33,9 @@ public class PdpMetrics {
     @Getter private final Counter signalEngineSuccessCounter;
     @Getter private final Counter signalEngineFailureCounter;
     @Getter private final Counter signalEngineSignalsStoredCounter;
+    @Getter private final Counter signalNormalizationSuccessCounter;
+    @Getter private final Counter signalNormalizationFailureCounter;
+    @Getter private final Counter signalNormalizationSignalsNormalizedCounter;
 
     // timers - برای اندازه‌گیری زمان عملیات‌های مهم
     @Getter private final Timer itemCreateTimer;
@@ -109,6 +112,18 @@ public class PdpMetrics {
 
         this.signalEngineSignalsStoredCounter = Counter.builder("pdp.signal_engine.signals_stored")
                 .description("تعداد snapshot های signals ذخیره شده")
+                .register(registry);
+
+        this.signalNormalizationSuccessCounter = Counter.builder("pdp.signal_normalization.success")
+                .description("تعداد نرمال سازی موفق")
+                .register(registry);
+
+        this.signalNormalizationFailureCounter = Counter.builder("pdp.signal_normalization.failure")
+                .description("تعداد نرمال سازی ناموفق")
+                .register(registry);
+
+        this.signalNormalizationSignalsNormalizedCounter = Counter.builder("pdp.signal_normalization.signals_normalized")
+                .description("تعداد signals نرمال شده")
                 .register(registry);
 
         this.itemCreateTimer = Timer.builder("pdp.item.create.duration")
