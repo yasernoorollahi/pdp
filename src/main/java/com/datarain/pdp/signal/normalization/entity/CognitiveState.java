@@ -13,7 +13,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "cognitive_states",
+@Table(name = "user_cognitive_states",
         indexes = {
                 @Index(name = "idx_cognitive_states_user", columnList = "user_id"),
                 @Index(name = "idx_cognitive_states_source_hash", columnList = "source_hash")

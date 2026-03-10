@@ -13,7 +13,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "tone_states",
+@Table(name = "user_tone_states",
         indexes = {
                 @Index(name = "idx_tone_states_user", columnList = "user_id"),
                 @Index(name = "idx_tone_states_signal", columnList = "signal_id"),

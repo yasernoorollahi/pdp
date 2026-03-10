@@ -15,7 +15,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "user_preferences",
+@Table(name = "user_context",
         indexes = {
                 @Index(name = "idx_user_preferences_user", columnList = "user_id"),
                 @Index(name = "idx_user_preferences_source_hash", columnList = "source_hash")

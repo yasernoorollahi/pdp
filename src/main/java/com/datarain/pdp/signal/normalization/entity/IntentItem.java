@@ -15,7 +15,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "intent_items",
+@Table(name = "user_intents",
         indexes = {
                 @Index(name = "idx_intent_items_user", columnList = "user_id"),
                 @Index(name = "idx_intent_items_type", columnList = "intent_type"),

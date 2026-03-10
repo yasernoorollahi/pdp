@@ -15,7 +15,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "cognitive_language_items",
+@Table(name = "user_cognitive_language",
         indexes = {
                 @Index(name = "idx_cognitive_language_items_user", columnList = "user_id"),
                 @Index(name = "idx_cognitive_language_items_type", columnList = "language_type"),
