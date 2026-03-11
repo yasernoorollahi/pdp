@@ -114,6 +114,9 @@ class SignalNormalizationServiceIT extends AbstractIT {
         assertEquals(7, metric.getDisciplineEventsCount());
         assertEquals(1, metric.getFrictionCount());
         assertEquals(0.8, metric.getMotivationScore(), 0.0001);
+        assertEquals(1, metric.getSignalCount());
+        assertEquals(1, metric.getEnergyScoreCount());
+        assertEquals(1, metric.getMotivationScoreCount());
         assertNotNull(metric.getRawSummary());
 
         CognitiveState cognitiveState = cognitiveStateRepository.findAll().getFirst();

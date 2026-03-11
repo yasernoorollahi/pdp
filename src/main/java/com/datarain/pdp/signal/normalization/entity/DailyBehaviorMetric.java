@@ -33,8 +33,14 @@ public class DailyBehaviorMetric extends AuditableEntity {
     @Column(name = "energy_score")
     private Double energyScore;
 
+    @Column(name = "energy_score_count")
+    private Integer energyScoreCount;
+
     @Column(name = "motivation_score")
     private Double motivationScore;
+
+    @Column(name = "motivation_score_count")
+    private Integer motivationScoreCount;
 
     @Column(name = "friction_count")
     private Integer frictionCount;
