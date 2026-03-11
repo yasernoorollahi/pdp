@@ -1,0 +1,398 @@
+package com.datarain.pdp.insights.service.impl;
+
+import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
+import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
+import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
+import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.security.web.SecurityUtils;
+import com.datarain.pdp.insights.dto.CountTrendResponse;
+import com.datarain.pdp.insights.dto.EnergyTrendResponse;
+import com.datarain.pdp.insights.dto.InsightMoodRequest;
+import com.datarain.pdp.insights.dto.InsightRangeRequest;
+import com.datarain.pdp.insights.dto.InsightSnapshotResponse;
+import com.datarain.pdp.insights.dto.InsightSummaryResponse;
+import com.datarain.pdp.insights.dto.MoodWordResponse;
+import com.datarain.pdp.insights.dto.MotivationTrendResponse;
+import com.datarain.pdp.insights.dto.TimelinePointResponse;
+import com.datarain.pdp.insights.dto.TrendPointResponse;
+import com.datarain.pdp.insights.mapper.InsightsMapper;
+import com.datarain.pdp.insights.service.InsightsService;
+import com.datarain.pdp.signal.normalization.entity.DailyBehaviorMetric;
+import com.datarain.pdp.signal.normalization.repository.DailyBehaviorMetricRepository;
+import com.datarain.pdp.signal.normalization.repository.DailyBehaviorMetricSummaryProjection;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class InsightsServiceImpl implements InsightsService {
+
+    private static final int DEFAULT_DAYS = 15;
+    private static final int DEFAULT_SUMMARY_DAYS = 7;
+    private static final int DEFAULT_MOOD_DAYS = 30;
+    private static final int DEFAULT_MOOD_LIMIT = 50;
+
+    private final DailyBehaviorMetricRepository dailyBehaviorMetricRepository;
+    private final SecurityAuditService securityAuditService;
+    private final PdpMetrics metrics;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TimelinePointResponse> getTimeline(InsightRangeRequest request, Pageable pageable) {
+        int days = request.resolveDays(DEFAULT_DAYS);
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.timeline.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("days", days)
+                .addKeyValue("traceId", traceId)
+                .log("Insights timeline requested");
+
+        metrics.getInsightsTimelineCounter().increment();
+        audit("timeline", userId, days);
+
+        LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
+        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
+                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+
+        return page.stream()
+                .map(InsightsMapper::toTimelinePoint)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EnergyTrendResponse getEnergyTrend(InsightRangeRequest request, Pageable pageable) {
+        int days = request.resolveDays(DEFAULT_DAYS);
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.energy.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("days", days)
+                .addKeyValue("traceId", traceId)
+                .log("Insights energy trend requested");
+
+        metrics.getInsightsEnergyCounter().increment();
+        audit("energy", userId, days);
+
+        LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
+        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
+                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+
+        List<TrendPointResponse> trend = page.stream()
+                .map(metric -> InsightsMapper.toTrendPoint(metric, metric.getEnergyScore()))
+                .toList();
+
+        Double average = summarize(userId, fromDate).getAvgEnergy();
+        return new EnergyTrendResponse(average, trend);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MotivationTrendResponse getMotivationTrend(InsightRangeRequest request, Pageable pageable) {
+        int days = request.resolveDays(DEFAULT_DAYS);
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.motivation.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("days", days)
+                .addKeyValue("traceId", traceId)
+                .log("Insights motivation trend requested");
+
+        metrics.getInsightsMotivationCounter().increment();
+        audit("motivation", userId, days);
+
+        LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
+        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
+                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+
+        List<TrendPointResponse> trend = page.stream()
+                .map(metric -> InsightsMapper.toTrendPoint(metric, metric.getMotivationScore()))
+                .toList();
+
+        Double average = summarize(userId, fromDate).getAvgMotivation();
+        return new MotivationTrendResponse(average, trend);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TrendPointResponse> getFrictionHeatmap(InsightRangeRequest request, Pageable pageable) {
+        int days = request.resolveDays(DEFAULT_DAYS);
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.friction.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("days", days)
+                .addKeyValue("traceId", traceId)
+                .log("Insights friction heatmap requested");
+
+        metrics.getInsightsFrictionCounter().increment();
+        audit("friction", userId, days);
+
+        LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
+        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
+                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+
+        return page.stream()
+                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.getFrictionCount())))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CountTrendResponse getSocialTrend(InsightRangeRequest request, Pageable pageable) {
+        int days = request.resolveDays(DEFAULT_DAYS);
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.social.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("days", days)
+                .addKeyValue("traceId", traceId)
+                .log("Insights social trend requested");
+
+        metrics.getInsightsSocialCounter().increment();
+        audit("social", userId, days);
+
+        LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
+        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
+                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+
+        List<TrendPointResponse> trend = page.stream()
+                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.getSocialMentionsCount())))
+                .toList();
+
+        int total = summarize(userId, fromDate).getSocialSum().intValue();
+        return new CountTrendResponse(total, trend);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CountTrendResponse getDisciplineTrend(InsightRangeRequest request, Pageable pageable) {
+        int days = request.resolveDays(DEFAULT_DAYS);
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.discipline.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("days", days)
+                .addKeyValue("traceId", traceId)
+                .log("Insights discipline trend requested");
+
+        metrics.getInsightsDisciplineCounter().increment();
+        audit("discipline", userId, days);
+
+        LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
+        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
+                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+
+        List<TrendPointResponse> trend = page.stream()
+                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.getDisciplineEventsCount())))
+                .toList();
+
+        int total = summarize(userId, fromDate).getDisciplineSum().intValue();
+        return new CountTrendResponse(total, trend);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InsightSummaryResponse getSummary(InsightRangeRequest request) {
+        int days = request.resolveDays(DEFAULT_SUMMARY_DAYS);
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.summary.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("days", days)
+                .addKeyValue("traceId", traceId)
+                .log("Insights summary requested");
+
+        metrics.getInsightsSummaryCounter().increment();
+        audit("summary", userId, days);
+
+        LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
+        DailyBehaviorMetricSummaryProjection summary = summarize(userId, fromDate);
+
+        String energyLevel = scoreToLevel(summary.getAvgEnergy(), "stable");
+        String motivationLevel = scoreToLevel(summary.getAvgMotivation(), "high");
+        String frictionLevel = countToLevel(summary.getFrictionSum(), "moderate", 1, 3);
+        String socialLevel = countToLevel(summary.getSocialSum(), "low", 1, 4);
+        String disciplineLevel = countToLevel(summary.getDisciplineSum(), "good", 2, 5);
+
+        return new InsightSummaryResponse(energyLevel, motivationLevel, frictionLevel, socialLevel, disciplineLevel);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InsightSnapshotResponse getTodaySnapshot() {
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.today.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("traceId", traceId)
+                .log("Insights today snapshot requested");
+
+        metrics.getInsightsTodayCounter().increment();
+        audit("today", userId, null);
+
+        return dailyBehaviorMetricRepository.findTopByUserIdOrderByMetricDateDesc(userId)
+                .map(metric -> new InsightSnapshotResponse(
+                        metric.getEnergyScore(),
+                        metric.getMotivationScore(),
+                        safeInt(metric.getFrictionCount()),
+                        safeInt(metric.getSocialMentionsCount()),
+                        safeInt(metric.getDisciplineEventsCount())
+                ))
+                .orElseGet(() -> new InsightSnapshotResponse(0.0, 0.0, 0, 0, 0));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MoodWordResponse> getMoodCloud(InsightMoodRequest request, Pageable pageable) {
+        int days = request.resolveDays(DEFAULT_MOOD_DAYS);
+        int limit = request.resolveLimit(DEFAULT_MOOD_LIMIT);
+        if (pageable != null && pageable.getPageSize() > 0) {
+            limit = Math.min(limit, pageable.getPageSize());
+        }
+        UUID userId = SecurityUtils.currentUserId();
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+
+        log.atInfo()
+                .addKeyValue("event", "insights.moods.requested")
+                .addKeyValue("userId", userId)
+                .addKeyValue("days", days)
+                .addKeyValue("limit", limit)
+                .addKeyValue("traceId", traceId)
+                .log("Insights mood cloud requested");
+
+        metrics.getInsightsMoodsCounter().increment();
+        audit("moods", userId, days);
+
+        LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
+        List<String> moods = dailyBehaviorMetricRepository.findMoodSummaries(userId, fromDate);
+
+        Map<String, Integer> counts = new HashMap<>();
+        for (String mood : moods) {
+            if (mood == null || mood.isBlank()) {
+                continue;
+            }
+            String[] tokens = mood.toLowerCase(Locale.ROOT).split("[^\\p{L}]+");
+            for (String token : tokens) {
+                if (token.isBlank() || token.length() < 2) {
+                    continue;
+                }
+                counts.merge(token, 1, Integer::sum);
+            }
+        }
+
+        return counts.entrySet().stream()
+                .sorted(Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue).reversed()
+                        .thenComparing(Map.Entry::getKey))
+                .limit(limit)
+                .map(entry -> new MoodWordResponse(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private DailyBehaviorMetricSummaryProjection summarize(UUID userId, LocalDate fromDate) {
+        DailyBehaviorMetricSummaryProjection summary = dailyBehaviorMetricRepository.summarize(userId, fromDate);
+        return summary != null ? summary : new EmptySummary();
+    }
+
+    private String scoreToLevel(Double score, String defaultLevel) {
+        if (score == null) {
+            return defaultLevel;
+        }
+        if (score >= 0.75) {
+            return "high";
+        }
+        if (score >= 0.55) {
+            return "stable";
+        }
+        if (score >= 0.35) {
+            return "low";
+        }
+        return "very_low";
+    }
+
+    private String countToLevel(Long total, String defaultLevel, long lowThreshold, long highThreshold) {
+        if (total == null) {
+            return defaultLevel;
+        }
+        if (total <= lowThreshold) {
+            return "low";
+        }
+        if (total <= highThreshold) {
+            return "moderate";
+        }
+        return "high";
+    }
+
+    private int safeInt(Integer value) {
+        return value == null ? 0 : value;
+    }
+
+    private void audit(String endpoint, UUID userId, Integer days) {
+        String email = SecurityUtils.currentUsername();
+        String details = days == null
+                ? "insights." + endpoint
+                : "insights." + endpoint + " days=" + days;
+        securityAuditService.log(SecurityEventType.INSIGHTS_VIEWED, email, userId, null, null, details, true);
+    }
+
+    private static final class EmptySummary implements DailyBehaviorMetricSummaryProjection {
+        @Override
+        public Double getAvgEnergy() {
+            return null;
+        }
+
+        @Override
+        public Double getAvgMotivation() {
+            return null;
+        }
+
+        @Override
+        public Long getFrictionSum() {
+            return 0L;
+        }
+
+        @Override
+        public Long getSocialSum() {
+            return 0L;
+        }
+
+        @Override
+        public Long getDisciplineSum() {
+            return 0L;
+        }
+    }
+}

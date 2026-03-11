@@ -8,9 +8,49 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface DailyBehaviorMetricRepository extends JpaRepository<DailyBehaviorMetric, UUID> {
+
+    Page<DailyBehaviorMetric> findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(
+            UUID userId,
+            LocalDate fromDate,
+            Pageable pageable
+    );
+
+    List<DailyBehaviorMetric> findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(
+            UUID userId,
+            LocalDate fromDate
+    );
+
+    Optional<DailyBehaviorMetric> findTopByUserIdOrderByMetricDateDesc(UUID userId);
+
+    @Query("""
+            SELECT AVG(m.energyScore) AS avgEnergy,
+                   AVG(m.motivationScore) AS avgMotivation,
+                   COALESCE(SUM(m.frictionCount), 0) AS frictionSum,
+                   COALESCE(SUM(m.socialMentionsCount), 0) AS socialSum,
+                   COALESCE(SUM(m.disciplineEventsCount), 0) AS disciplineSum
+            FROM DailyBehaviorMetric m
+            WHERE m.userId = :userId
+              AND m.metricDate >= :fromDate
+            """)
+    DailyBehaviorMetricSummaryProjection summarize(@Param("userId") UUID userId,
+                                                   @Param("fromDate") LocalDate fromDate);
+
+    @Query(value = """
+            SELECT raw_summary ->> 'mood'
+            FROM daily_behavior_metrics
+            WHERE user_id = :userId
+              AND metric_date >= :fromDate
+              AND jsonb_exists(raw_summary, 'mood')
+            """, nativeQuery = true)
+    List<String> findMoodSummaries(@Param("userId") UUID userId,
+                                   @Param("fromDate") LocalDate fromDate);
 
     @Modifying
     @Query(value = """

@@ -36,6 +36,15 @@ public class PdpMetrics {
     @Getter private final Counter signalNormalizationSuccessCounter;
     @Getter private final Counter signalNormalizationFailureCounter;
     @Getter private final Counter signalNormalizationSignalsNormalizedCounter;
+    @Getter private final Counter insightsTimelineCounter;
+    @Getter private final Counter insightsEnergyCounter;
+    @Getter private final Counter insightsMotivationCounter;
+    @Getter private final Counter insightsFrictionCounter;
+    @Getter private final Counter insightsSocialCounter;
+    @Getter private final Counter insightsDisciplineCounter;
+    @Getter private final Counter insightsSummaryCounter;
+    @Getter private final Counter insightsTodayCounter;
+    @Getter private final Counter insightsMoodsCounter;
 
     // timers - برای اندازه‌گیری زمان عملیات‌های مهم
     @Getter private final Timer itemCreateTimer;
@@ -124,6 +133,42 @@ public class PdpMetrics {
 
         this.signalNormalizationSignalsNormalizedCounter = Counter.builder("pdp.signal_normalization.signals_normalized")
                 .description("تعداد signals نرمال شده")
+                .register(registry);
+
+        this.insightsTimelineCounter = Counter.builder("pdp.insights.timeline")
+                .description("تعداد درخواست های timeline insights")
+                .register(registry);
+
+        this.insightsEnergyCounter = Counter.builder("pdp.insights.energy")
+                .description("تعداد درخواست های energy insights")
+                .register(registry);
+
+        this.insightsMotivationCounter = Counter.builder("pdp.insights.motivation")
+                .description("تعداد درخواست های motivation insights")
+                .register(registry);
+
+        this.insightsFrictionCounter = Counter.builder("pdp.insights.friction")
+                .description("تعداد درخواست های friction insights")
+                .register(registry);
+
+        this.insightsSocialCounter = Counter.builder("pdp.insights.social")
+                .description("تعداد درخواست های social insights")
+                .register(registry);
+
+        this.insightsDisciplineCounter = Counter.builder("pdp.insights.discipline")
+                .description("تعداد درخواست های discipline insights")
+                .register(registry);
+
+        this.insightsSummaryCounter = Counter.builder("pdp.insights.summary")
+                .description("تعداد درخواست های summary insights")
+                .register(registry);
+
+        this.insightsTodayCounter = Counter.builder("pdp.insights.today")
+                .description("تعداد درخواست های today insights")
+                .register(registry);
+
+        this.insightsMoodsCounter = Counter.builder("pdp.insights.moods")
+                .description("تعداد درخواست های moods insights")
                 .register(registry);
 
         this.itemCreateTimer = Timer.builder("pdp.item.create.duration")
