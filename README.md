@@ -32,6 +32,14 @@ PDP is a layered Java 21 / Spring Boot 3.5 service that provides:
 - Moderation case management
 - Rate limiting, audit logging, health/metrics endpoints, and job monitoring
 
+
+## Engineering Case Study
+
+A deep dive into the architecture and design decisions behind PDP.
+
+👉 [Read the Engineering Case Study](docs/engineering-case-study.md)
+
+
 ## Core Capabilities
 
 - Authentication: register, login, refresh, logout, logout-all
