@@ -29,6 +29,8 @@ public interface DailyBehaviorMetricRepository extends JpaRepository<DailyBehavi
 
     Optional<DailyBehaviorMetric> findTopByUserIdOrderByMetricDateDesc(UUID userId);
 
+    int deleteByUserIdAndMetricDateBetween(UUID userId, LocalDate fromDate, LocalDate toDate);
+
     @Query("""
             SELECT AVG(m.energyScore) AS avgEnergy,
                    AVG(m.motivationScore) AS avgMotivation,

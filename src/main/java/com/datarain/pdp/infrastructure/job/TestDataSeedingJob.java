@@ -23,6 +23,8 @@ import com.datarain.pdp.moderation.entity.ModerationSource;
 import com.datarain.pdp.moderation.entity.ModerationStatus;
 import com.datarain.pdp.moderation.entity.ModerationTargetType;
 import com.datarain.pdp.moderation.repository.ModerationCaseRepository;
+import com.datarain.pdp.testdata.service.DailyBehaviorMetricsSeedService;
+import com.datarain.pdp.testdata.service.model.DailyBehaviorMetricsSeedResult;
 import com.datarain.pdp.user.entity.User;
 import com.datarain.pdp.user.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -55,11 +57,15 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
     private final SecurityAuditLogRepository securityAuditLogRepository;
     private final JobExecutionLogRepository jobExecutionLogRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DailyBehaviorMetricsSeedService dailyBehaviorMetricsSeedService;
 
     private final int usersCount;
     private final int itemsPerUser;
     private final int refreshTokensPerUser;
     private final boolean forceSeed;
+    private final boolean dailyBehaviorEnabled;
+    private final String dailyBehaviorUserEmail;
+    private final int dailyBehaviorDays;
 
     public TestDataSeedingJob(UserRepository userRepository,
                               ItemRepository itemRepository,
@@ -69,11 +75,15 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
                               SecurityAuditLogRepository securityAuditLogRepository,
                               JobExecutionLogRepository jobExecutionLogRepository,
                               PasswordEncoder passwordEncoder,
+                              DailyBehaviorMetricsSeedService dailyBehaviorMetricsSeedService,
                               JobMonitoringService jobMonitoringService,
                               @Value("${jobs.test-data.users:20}") int usersCount,
                               @Value("${jobs.test-data.items-per-user:5}") int itemsPerUser,
                               @Value("${jobs.test-data.refresh-tokens-per-user:2}") int refreshTokensPerUser,
-                              @Value("${jobs.test-data.force:false}") boolean forceSeed) {
+                              @Value("${jobs.test-data.force:false}") boolean forceSeed,
+                              @Value("${jobs.test-data.daily-behavior.enabled:true}") boolean dailyBehaviorEnabled,
+                              @Value("${jobs.test-data.daily-behavior.user-email:}") String dailyBehaviorUserEmail,
+                              @Value("${jobs.test-data.daily-behavior.days:30}") int dailyBehaviorDays) {
         super(jobMonitoringService);
         this.userRepository = userRepository;
         this.itemRepository = itemRepository;
@@ -83,10 +93,14 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
         this.securityAuditLogRepository = securityAuditLogRepository;
         this.jobExecutionLogRepository = jobExecutionLogRepository;
         this.passwordEncoder = passwordEncoder;
+        this.dailyBehaviorMetricsSeedService = dailyBehaviorMetricsSeedService;
         this.usersCount = usersCount;
         this.itemsPerUser = itemsPerUser;
         this.refreshTokensPerUser = refreshTokensPerUser;
         this.forceSeed = forceSeed;
+        this.dailyBehaviorEnabled = dailyBehaviorEnabled;
+        this.dailyBehaviorUserEmail = dailyBehaviorUserEmail;
+        this.dailyBehaviorDays = dailyBehaviorDays;
     }
 
     @Override
@@ -99,7 +113,7 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
         boolean markerExists = userRepository.existsByEmail(SEED_MARKER_EMAIL);
         if (markerExists && !forceSeed) {
             log.info("TestDataSeedingJob skipped. seed marker user already exists: {}", SEED_MARKER_EMAIL);
-            return 0;
+            return seedDailyBehaviorMetrics();
         }
         if (markerExists) {
             log.warn("TestDataSeedingJob force mode is enabled. Seeding will run again despite existing marker user.");
@@ -112,8 +126,26 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
         long moderationCases = createModerationCases(users, items);
         long audits = createSecurityAudits(users);
         long syntheticJobLogs = createSyntheticJobLogs();
+        long dailyBehaviorMetrics = seedDailyBehaviorMetrics();
 
-        return users.size() + items.size() + refreshTokens + notifications + moderationCases + audits + syntheticJobLogs;
+        return users.size() + items.size() + refreshTokens + notifications + moderationCases + audits + syntheticJobLogs
+                + dailyBehaviorMetrics;
+    }
+
+    private long seedDailyBehaviorMetrics() {
+        if (!dailyBehaviorEnabled) {
+            log.info("Daily behavior metrics seeding disabled. Skipping.");
+            return 0;
+        }
+
+        if (dailyBehaviorUserEmail == null || dailyBehaviorUserEmail.isBlank()) {
+            log.warn("Daily behavior metrics seeding skipped. No user email configured (jobs.test-data.daily-behavior.user-email).");
+            return 0;
+        }
+
+        DailyBehaviorMetricsSeedResult result = dailyBehaviorMetricsSeedService
+                .seedForUser(dailyBehaviorUserEmail.trim(), dailyBehaviorDays, forceSeed);
+        return result.insertedCount();
     }
 
     private List<User> createUsers() {
