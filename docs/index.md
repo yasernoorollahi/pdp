@@ -14,5 +14,9 @@ This folder contains structured documentation for the backend codebase. It is in
    - [features.md](./features.md)
 5. Frontend understanding (pdp-ui)
    - [frontend.md](./frontend.md)
+6. PDP UI deep dive
+   - [pdp-ui.md](./pdp-ui.md)
+7. PDP AI Signals service deep dive
+   - [pdp-ai-signals.md](./pdp-ai-signals.md)
 
 If you want a Persian version of these docs, say which sections to translate first.
