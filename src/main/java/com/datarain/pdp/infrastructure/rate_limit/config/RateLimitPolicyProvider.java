@@ -31,9 +31,9 @@ public class RateLimitPolicyProvider {
         }
 
         if (path.startsWith("/api/extraction")) {
-            return new RateLimitConfig(20, Duration.ofMinutes(1));
+            return new RateLimitConfig(50, Duration.ofMinutes(1));
         }
 
-        return new RateLimitConfig(50, Duration.ofMinutes(1));
+        return new RateLimitConfig(100, Duration.ofMinutes(1));
     }
 }
