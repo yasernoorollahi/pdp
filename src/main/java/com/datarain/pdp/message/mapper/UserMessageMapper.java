@@ -27,5 +27,16 @@ public interface UserMessageMapper {
     @Mapping(target = "enabled", ignore = true)
     UserMessage toEntity(UserMessageCreateRequest request);
 
+    @Mapping(target = "processingStatus",
+            expression = "java(shouldExposeProcessingStatus(entity) ? entity.getProcessingStatus().name() : \"IGNORE\")")
     UserMessageResponse toResponse(UserMessage entity);
+
+    default boolean shouldExposeProcessingStatus(UserMessage entity) {
+        if (entity == null) {
+            return false;
+        }
+        String decision = entity.getSignalDecision();
+        return decision != null && "USEFUL".equalsIgnoreCase(decision)
+                && entity.getProcessingStatus() != null;
+    }
 }

@@ -4,7 +4,7 @@ spring.application.name: personal-data-platform
 jobs.refresh-token.enabled: true
 jobs.notification-email.enabled: true
 jobs.user-message-analysis.enabled: true
-jobs.user-message-analysis.batch-size: 50
+jobs.user-message-analysis.batch-size: 5
 jobs.user-message-analysis.cron: "0 */1 * * * ?"
 jobs.ai-signal-engine.enabled: true
 jobs.ai-signal-engine.batch-size: 1
