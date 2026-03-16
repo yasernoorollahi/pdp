@@ -13,6 +13,7 @@ Project path:
 - **API**: Axios instance with interceptor adding `Authorization: Bearer <token>`
 - **UI composition**: Layouts + feature folders + shared UI components
 
+
 High-level flow:
 
 ```

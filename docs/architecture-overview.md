@@ -9,6 +9,11 @@ This is a Spring Boot monolith organized into clear layers:
 4. **Infrastructure**: security, rate limiting, tracing/logging, metrics, external API clients, jobs.
 5. **Data layer**: PostgreSQL managed by Flyway migrations.
 
+
+
+![pdp_architecture_overview](pdp_architecture_overview.png)
+
+
 A typical request flow:
 
 ```
