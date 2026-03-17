@@ -1,6 +1,7 @@
-package com.datarain.pdp.admin.service;
+package com.datarain.pdp.admin.service.impl;
 
 import com.datarain.pdp.admin.dto.SystemOverviewResponse;
+import com.datarain.pdp.admin.service.SystemOverviewService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
@@ -66,6 +67,10 @@ public class SystemOverviewServiceImpl implements SystemOverviewService {
                     statuses.put(name, resolveStatus(component))
             );
         }
+        if (statuses.containsKey("database")) {
+            statuses.remove("db");
+        }
+        statuses.remove("ssl");
         return statuses;
     }
 

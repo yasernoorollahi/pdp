@@ -46,6 +46,7 @@ public class PdpMetrics {
     @Getter private final Counter insightsTodayCounter;
     @Getter private final Counter insightsMoodsCounter;
     @Getter private final Counter testDataDailyBehaviorSeedCounter;
+    @Getter private final Counter adminSystemOverviewCounter;
 
     // timers - برای اندازه‌گیری زمان عملیات‌های مهم
     @Getter private final Timer itemCreateTimer;
@@ -174,6 +175,10 @@ public class PdpMetrics {
 
         this.testDataDailyBehaviorSeedCounter = Counter.builder("pdp.test_data.daily_behavior.seeded")
                 .description("تعداد اجرای seeding برای daily behavior metrics")
+                .register(registry);
+
+        this.adminSystemOverviewCounter = Counter.builder("pdp.admin.system_overview")
+                .description("تعداد درخواست های admin system overview")
                 .register(registry);
 
         this.itemCreateTimer = Timer.builder("pdp.item.create.duration")
