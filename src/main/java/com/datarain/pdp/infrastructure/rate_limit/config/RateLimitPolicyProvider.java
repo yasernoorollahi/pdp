@@ -15,11 +15,11 @@ public class RateLimitPolicyProvider {
 
         //ترتیب تعریف باید اینجوری باشه : specific → general
         if (path.startsWith("/api/auth/login")) {
-            return new RateLimitConfig(50, Duration.ofMinutes(1));
+            return new RateLimitConfig(100, Duration.ofMinutes(1));
         }
 
         if (path.startsWith("/api/auth")) {
-            return new RateLimitConfig(20, Duration.ofMinutes(1));
+            return new RateLimitConfig(50, Duration.ofMinutes(1));
         }
 
         if (path.startsWith("/api/items")) {

@@ -69,6 +69,7 @@ management.endpoints.web.exposure.include: health, info, metrics, prometheus
 management.endpoint.health.show-details: when_authorized
 management.endpoint.health.show-components: when_authorized
 management.endpoint.health.roles: ADMIN
+management.health.diskspace.threshold: 100MB
 
 
 
