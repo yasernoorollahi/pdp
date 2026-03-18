@@ -96,16 +96,6 @@ pdp.ai.extraction.default-model: qwen2.5:7b
 pdp.ai.extraction.connect-timeout: 300s
 pdp.ai.extraction.read-timeout: 310s
 #============================================================
-resilience4j.circuitbreaker.instances.httpbin.failure-rate-threshold: 50
-resilience4j.circuitbreaker.instances.httpbin.sliding-window-size: 5
-resilience4j.circuitbreaker.instances.httpbin.wait-duration-in-open-state: 20s
-
-resilience4j.retry.instances.httpbin.max-attempts: 2
-resilience4j.retry.instances.httpbin.wait-duration: 500ms
-
-resilience4j.timelimiter.instances.httpbin.timeout-duration: 3s
-
-
 #===================== JWT  ==========================
 
 pdp.jwt.secret: super-secret-key-that-must-be-at-least-32-chars-long-change-in-production
