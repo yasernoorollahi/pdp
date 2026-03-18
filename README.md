@@ -150,6 +150,7 @@ Docs and ops endpoints:
 Main tables (via Flyway migrations):
 
 - Identity/security: `users`, `user_roles`, `refresh_tokens`, `security_audit_logs`
+- Business/ops audit: `business_event_logs`
 - Core content: `items`, `notifications`, `moderation_cases`
 - AI/message pipeline: `user_messages`, `message_signals`
 - Analytics foundation: `daily_behavior_metrics`, `user_entities`, `user_activities`, `user_topics`, `intent_items`, `user_preferences`, `cognitive_states`

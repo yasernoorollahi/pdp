@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EntityScan(basePackages = {"com.datarain.pdp", "com.pdp"})
 @EnableJpaRepositories(basePackages = {"com.datarain.pdp", "com.pdp"})
 @EnableScheduling
-// اضافه شد: @EnableAsync برای SecurityAuditService که از @Async استفاده میکنه
+// اضافه شد: @EnableAsync برای سرویس‌های audit که از @Async استفاده میکنن
 @EnableAsync
 public class PersonalDataPlatformApplication {
     public static void main(String[] args) {

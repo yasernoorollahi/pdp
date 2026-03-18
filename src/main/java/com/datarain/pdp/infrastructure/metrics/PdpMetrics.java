@@ -36,15 +36,6 @@ public class PdpMetrics {
     @Getter private final Counter signalNormalizationSuccessCounter;
     @Getter private final Counter signalNormalizationFailureCounter;
     @Getter private final Counter signalNormalizationSignalsNormalizedCounter;
-    @Getter private final Counter insightsTimelineCounter;
-    @Getter private final Counter insightsEnergyCounter;
-    @Getter private final Counter insightsMotivationCounter;
-    @Getter private final Counter insightsFrictionCounter;
-    @Getter private final Counter insightsSocialCounter;
-    @Getter private final Counter insightsDisciplineCounter;
-    @Getter private final Counter insightsSummaryCounter;
-    @Getter private final Counter insightsTodayCounter;
-    @Getter private final Counter insightsMoodsCounter;
     @Getter private final Counter testDataDailyBehaviorSeedCounter;
     @Getter private final Counter adminSystemOverviewCounter;
 
@@ -52,7 +43,10 @@ public class PdpMetrics {
     @Getter private final Timer itemCreateTimer;
     @Getter private final Timer authLoginTimer;
 
+    private final MeterRegistry registry;
+
     public PdpMetrics(MeterRegistry registry) {
+        this.registry = registry;
         this.loginSuccessCounter = Counter.builder("pdp.auth.login.success")
                 .description("تعداد ورود موفق")
                 .register(registry);
@@ -137,42 +131,6 @@ public class PdpMetrics {
                 .description("تعداد signals نرمال شده")
                 .register(registry);
 
-        this.insightsTimelineCounter = Counter.builder("pdp.insights.timeline")
-                .description("تعداد درخواست های timeline insights")
-                .register(registry);
-
-        this.insightsEnergyCounter = Counter.builder("pdp.insights.energy")
-                .description("تعداد درخواست های energy insights")
-                .register(registry);
-
-        this.insightsMotivationCounter = Counter.builder("pdp.insights.motivation")
-                .description("تعداد درخواست های motivation insights")
-                .register(registry);
-
-        this.insightsFrictionCounter = Counter.builder("pdp.insights.friction")
-                .description("تعداد درخواست های friction insights")
-                .register(registry);
-
-        this.insightsSocialCounter = Counter.builder("pdp.insights.social")
-                .description("تعداد درخواست های social insights")
-                .register(registry);
-
-        this.insightsDisciplineCounter = Counter.builder("pdp.insights.discipline")
-                .description("تعداد درخواست های discipline insights")
-                .register(registry);
-
-        this.insightsSummaryCounter = Counter.builder("pdp.insights.summary")
-                .description("تعداد درخواست های summary insights")
-                .register(registry);
-
-        this.insightsTodayCounter = Counter.builder("pdp.insights.today")
-                .description("تعداد درخواست های today insights")
-                .register(registry);
-
-        this.insightsMoodsCounter = Counter.builder("pdp.insights.moods")
-                .description("تعداد درخواست های moods insights")
-                .register(registry);
-
         this.testDataDailyBehaviorSeedCounter = Counter.builder("pdp.test_data.daily_behavior.seeded")
                 .description("تعداد اجرای seeding برای daily behavior metrics")
                 .register(registry);
@@ -188,5 +146,9 @@ public class PdpMetrics {
         this.authLoginTimer = Timer.builder("pdp.auth.login.duration")
                 .description("زمان پردازش login")
                 .register(registry);
+    }
+
+    public void incrementInsights(String type) {
+        registry.counter("pdp.insights.request", "type", type).increment();
     }
 }

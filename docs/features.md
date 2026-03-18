@@ -21,18 +21,24 @@
 
 ## Auditing
 
-There are two layers of auditing:
+There are three layers of auditing:
 
 1. **Security audit logs**
    - `SecurityAuditService` writes to `security_audit_logs`.
-   - Events include login success/failure, token refresh, logout, extraction requested, etc.
+   - Events include login success/failure, token refresh, logout, account status changes.
    - Writes asynchronously so it does not slow the main request.
 
-2. **Domain audit events**
+2. **Business event logs**
+   - `BusinessEventService` writes to `business_event_logs`.
+   - Events include extraction, moderation actions, user message lifecycle, signal engine/normalization, insights views, admin overview views, test data seeds.
+   - Writes asynchronously so it does not slow the main request.
+
+3. **Domain audit events**
    - `AuditTrailListener` listens for domain events (e.g., `ItemCreatedEvent`) and logs them.
 
-**Why two layers**
+**Why multiple layers**
 - Security audit logs are structured, searchable, and persist in DB.
+- Business event logs capture product/ops signals without mixing with security events.
 - Domain audit logs are light-weight operational signals via logging.
 
 ## Tracing

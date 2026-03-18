@@ -2,8 +2,8 @@ package com.datarain.pdp.signal.service.impl;
 
 import com.datarain.pdp.extraction.dto.ExtractionRequest;
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
-import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
-import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.audit.BusinessEventService;
+import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.message.entity.MessageProcessingStatus;
 import com.datarain.pdp.message.entity.UserMessage;
 import com.datarain.pdp.message.repository.UserMessageRepository;
@@ -41,7 +41,7 @@ public class AiSignalEngineServiceImpl implements AiSignalEngineService {
     private final MessageSignalRepository messageSignalRepository;
     private final SignalOrchestrator signalOrchestrator;
     private final MessageSignalMapper messageSignalMapper;
-    private final SecurityAuditService securityAuditService;
+    private final BusinessEventService businessEventService;
     private final PdpMetrics metrics;
     private final ObjectMapper objectMapper;
 
@@ -110,11 +110,9 @@ public class AiSignalEngineServiceImpl implements AiSignalEngineService {
                     .addKeyValue("latencyMs", latencyMs)
                     .log("AI signal engine processed message");
 
-            securityAuditService.log(
-                    SecurityEventType.SIGNAL_ENGINE_EXECUTED,
+            businessEventService.log(
+                    BusinessEventType.SIGNAL_ENGINE_EXECUTED,
                     SYSTEM_EMAIL,
-                    null,
-                    null,
                     null,
                     "Signal engine processed message: " + message.getId(),
                     true
@@ -137,11 +135,9 @@ public class AiSignalEngineServiceImpl implements AiSignalEngineService {
                     .addKeyValue("errorType", ex.getClass().getSimpleName())
                     .log("AI signal engine failed to process message");
 
-            securityAuditService.log(
-                    SecurityEventType.SIGNAL_ENGINE_EXECUTED,
+            businessEventService.log(
+                    BusinessEventType.SIGNAL_ENGINE_EXECUTED,
                     SYSTEM_EMAIL,
-                    null,
-                    null,
                     null,
                     "Signal engine failed for message: " + message.getId() + " error=" + ex.getClass().getSimpleName(),
                     false

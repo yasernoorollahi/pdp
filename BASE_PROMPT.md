@@ -11,6 +11,7 @@ Rate limit policy: add/adjust in RateLimitPolicyProvider
 Metrics: add counter/timer when business-relevant
 Security audit: log when action is security-sensitive
 Domain event: publish when action is auditable/observable
+Business event: log when action is product/ops-relevant
 ```
 
 ## Goal
@@ -71,6 +72,15 @@ Add this comment above the access decision and pick one:
 // Security audit: log a SecurityEventType for this action if relevant
 ```
 
+## Business Event Logs
+- Product/ops actions should be logged in `BusinessEventService`.
+- Event types live in `BusinessEventType`.
+
+### Business Event Option
+```
+// Business event: log a BusinessEventType for this action if relevant
+```
+
 ## Domain Audit / Events
 - Domain events (e.g., `ItemCreatedEvent`) are published in services.
 - Listeners like `AuditTrailListener` / analytics / notifications consume them.
@@ -103,6 +113,7 @@ Add this comment above the access decision and pick one:
 - RateLimitPolicyProvider policy review
 - PdpMetrics counter/timer (if needed)
 - SecurityAuditService event (if needed)
+- BusinessEventService event (if needed)
 - Domain event (if needed)
 - Integration test
 

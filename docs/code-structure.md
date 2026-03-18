@@ -39,6 +39,7 @@ Infrastructure concerns and cross-cutting services:
 
 - `security`: JWT, auth filter, password encoding, roles
 - `security/audit`: security event audit logging
+- `audit`: business event audit logging
 - `security/lockout`: account lockout logic
 - `logging`: trace ID filter for request correlation
 - `metrics`: Micrometer counters and timers (PdpMetrics)

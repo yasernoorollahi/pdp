@@ -57,6 +57,7 @@ User -> PDP UI -> Core API -> AI Signals -> Core API -> DB -> UI
 - **Signals & normalization**: normalized entities (tone, intent, topics, etc.) and daily metrics.
 - **Insights**: derived from daily behavior metrics.
 - **Security audit logs**: independent audit table for security events.
+- **Business event logs**: independent audit table for product/ops events.
 
 ## Runtime configuration
 

@@ -2,8 +2,8 @@ package com.datarain.pdp.moderation.service.impl;
 
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
 import com.datarain.pdp.infrastructure.security.web.SecurityUtils;
-import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
-import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.audit.BusinessEventService;
+import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.moderation.dto.ModerationCaseActionRequest;
 import com.datarain.pdp.moderation.dto.ModerationCaseCreateRequest;
 import com.datarain.pdp.moderation.dto.ModerationCaseResponse;
@@ -34,7 +34,7 @@ public class ModerationCaseServiceImpl implements ModerationCaseService {
 
     private final ModerationCaseRepository moderationCaseRepository;
     private final ModerationCaseMapper moderationCaseMapper;
-    private final SecurityAuditService securityAuditService;
+    private final BusinessEventService businessEventService;
     private final PdpMetrics metrics;
 
     @Override
@@ -67,12 +67,10 @@ public class ModerationCaseServiceImpl implements ModerationCaseService {
                 .log("Moderation case created");
 
         Actor actor = currentActor();
-        securityAuditService.log(
-                SecurityEventType.MODERATION_CASE_CREATED,
+        businessEventService.log(
+                BusinessEventType.MODERATION_CASE_CREATED,
                 actor.email,
                 actor.userId,
-                null,
-                null,
                 "Moderation case created: " + saved.getId(),
                 true
         );
@@ -83,13 +81,13 @@ public class ModerationCaseServiceImpl implements ModerationCaseService {
     @Override
     @Transactional
     public ModerationCaseResponse approve(UUID id, ModerationCaseActionRequest request) {
-        return changeStatus(id, ModerationStatus.APPROVED, request.comment(), SecurityEventType.MODERATION_CASE_APPROVED);
+        return changeStatus(id, ModerationStatus.APPROVED, request.comment(), BusinessEventType.MODERATION_CASE_APPROVED);
     }
 
     @Override
     @Transactional
     public ModerationCaseResponse reject(UUID id, ModerationCaseActionRequest request) {
-        return changeStatus(id, ModerationStatus.REJECTED, request.comment(), SecurityEventType.MODERATION_CASE_REJECTED);
+        return changeStatus(id, ModerationStatus.REJECTED, request.comment(), BusinessEventType.MODERATION_CASE_REJECTED);
     }
 
     @Override
@@ -99,7 +97,7 @@ public class ModerationCaseServiceImpl implements ModerationCaseService {
                 id,
                 ModerationStatus.AUTO_BLOCKED,
                 request.comment(),
-                SecurityEventType.MODERATION_CASE_AUTO_BLOCKED
+                BusinessEventType.MODERATION_CASE_AUTO_BLOCKED
         );
         metrics.getModerationCaseAutoBlockedCounter().increment();
         return response;
@@ -108,7 +106,7 @@ public class ModerationCaseServiceImpl implements ModerationCaseService {
     private ModerationCaseResponse changeStatus(UUID id,
                                                 ModerationStatus newStatus,
                                                 String comment,
-                                                SecurityEventType eventType) {
+                                                BusinessEventType eventType) {
         ModerationCase moderationCase = findCase(id);
         ensureTransitionAllowed(moderationCase, newStatus);
 
@@ -130,12 +128,10 @@ public class ModerationCaseServiceImpl implements ModerationCaseService {
                 .addKeyValue("source", saved.getSource())
                 .log("Moderation case status changed");
 
-        securityAuditService.log(
+        businessEventService.log(
                 eventType,
                 actor.email,
                 actor.userId,
-                null,
-                null,
                 "Moderation status changed to " + newStatus + " for case " + saved.getId(),
                 true
         );
