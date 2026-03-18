@@ -4,7 +4,6 @@ import com.datarain.pdp.item.dto.ItemRequest;
 import com.datarain.pdp.item.dto.ItemResponse;
 import com.datarain.pdp.item.entity.ItemType;
 import com.datarain.pdp.item.service.ItemService;
-import com.datarain.pdp.infrastructure.external.httpbin.HttpBinClientService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springdoc.core.annotations.ParameterObject;
@@ -24,11 +23,8 @@ import java.util.UUID;
 public class ItemController {
 
     private final ItemService itemService;
-    private final HttpBinClientService httpBinClientService;
-
-    public ItemController(ItemService itemService, HttpBinClientService httpBinClientService) {
+    public ItemController(ItemService itemService) {
         this.itemService = itemService;
-        this.httpBinClientService = httpBinClientService;
     }
 
     // اضافه شد: @PreAuthorize برای method-level security
@@ -72,8 +68,4 @@ public class ItemController {
         itemService.restore(id);
     }
 
-    @GetMapping("/httpbin")
-    public String testHttpBin() {
-        return httpBinClientService.delay().join();
-    }
 }

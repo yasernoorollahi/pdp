@@ -43,7 +43,7 @@ Infrastructure concerns and cross-cutting services:
 - `logging`: trace ID filter for request correlation
 - `metrics`: Micrometer counters and timers (PdpMetrics)
 - `rate_limit`: rate limiting filter, policy, and service
-- `external`: HTTP clients (e.g., httpbin, AI extraction)
+- `external`: HTTP clients (e.g., AI extraction)
 - `job`: background jobs and monitoring
 - `health`: health indicators
 

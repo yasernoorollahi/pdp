@@ -60,7 +60,7 @@
   - `PATCH /api/users/{id}/enabled?enabled=true|false`
 
 ### نکته مهم درباره Retry
-واژه `retry` در پروژه مربوط به **Resilience4j** و تنها برای درخواست خارجی `httpbin` است.
+واژه `retry` در پروژه مربوط به **Resilience4j** است.
 هیچ Retry خودکار برای ورود کاربران وجود ندارد.
 
 ## Rate Limit
@@ -159,8 +159,6 @@
     - `jobs.test-data.refresh-tokens-per-user`
 
 ## Resilience4j (نمونه خارجی)
-- `GET /api/items/httpbin`
-  - درخواست به `https://httpbin.org/delay/5`
   - دارای Circuit Breaker، Retry و TimeLimiter
   - Retry فقط برای این مسیر است (نه login)
 
