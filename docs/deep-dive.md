@@ -172,15 +172,6 @@ File: `.../rate_limit/service/impl/RedisRateLimitService.java`
 
 Controllers are thin and call a service. They enforce method-level security via `@PreAuthorize`.
 
-### Example: ItemController
-File: `src/main/java/com/datarain/pdp/item/controller/ItemController.java`
-
-- `POST /api/items`: create item (ROLE_USER/ROLE_ADMIN)
-- `GET /api/items/{id}`: get item (ROLE_USER/ROLE_ADMIN)
-- `DELETE /api/items/{id}`: archive item (ROLE_ADMIN)
-- `GET /api/items`: list/search items with paging
-- `PUT /api/items/{id}/restore`: restore item (ROLE_ADMIN)
-
 ### Example: UserMessageController
 File: `src/main/java/com/datarain/pdp/message/controller/UserMessageController.java`
 
@@ -199,15 +190,6 @@ File: `src/main/java/com/datarain/pdp/insights/controller/InsightsController.jav
 - Provides timeline and summary analytics using daily metrics.
 
 ## Services (pattern + examples)
-
-### ItemServiceImpl
-File: `src/main/java/com/datarain/pdp/item/service/impl/ItemServiceImpl.java`
-
-- `create`: map DTO -> entity, save, publish `ItemCreatedEvent`, increment metrics, timer.
-- `getById`: fetch or throw `ItemNotFoundException`.
-- `delete`: archive item (soft delete), publish `ItemArchivedEvent`.
-- `getAll`: specification query: status+enabled+type+search.
-- `restore`: unarchive.
 
 ### UserMessageServiceImpl
 File: `src/main/java/com/datarain/pdp/message/service/impl/UserMessageServiceImpl.java`
@@ -241,10 +223,4 @@ File: `src/main/java/com/datarain/pdp/infrastructure/metrics/PdpMetrics.java`
 
 - A central registry of counters and timers used by services.
 - Exposed via `/actuator/prometheus` for dashboards.
-- Used by Auth, Item, Extraction, Signal Engine, Insights, Moderation, etc.
-
-Example usage in `ItemServiceImpl`:
-```java
-metrics.getItemCreatedCounter().increment();
-metrics.getItemCreateTimer().record(Duration.between(startedAt, Instant.now()));
-```
+- Used by Auth, Extraction, Signal Engine, Insights, etc.

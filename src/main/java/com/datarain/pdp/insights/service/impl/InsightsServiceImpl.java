@@ -2,8 +2,8 @@ package com.datarain.pdp.insights.service.impl;
 
 import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
-import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
-import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.audit.BusinessEventService;
+import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.infrastructure.security.web.SecurityUtils;
 import com.datarain.pdp.insights.dto.CountTrendResponse;
 import com.datarain.pdp.insights.dto.EnergyTrendResponse;
@@ -50,7 +50,7 @@ public class InsightsServiceImpl implements InsightsService {
     private static final int DEFAULT_MOOD_LIMIT = 50;
 
     private final DailyBehaviorMetricRepository dailyBehaviorMetricRepository;
-    private final SecurityAuditService securityAuditService;
+    private final BusinessEventService businessEventService;
     private final PdpMetrics metrics;
 
     @Override
@@ -67,7 +67,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights timeline requested");
 
-        metrics.getInsightsTimelineCounter().increment();
+        metrics.incrementInsights("timeline");
         audit("timeline", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
@@ -93,7 +93,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights energy trend requested");
 
-        metrics.getInsightsEnergyCounter().increment();
+        metrics.incrementInsights("energy");
         audit("energy", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
@@ -122,7 +122,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights motivation trend requested");
 
-        metrics.getInsightsMotivationCounter().increment();
+        metrics.incrementInsights("motivation");
         audit("motivation", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
@@ -151,7 +151,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights friction heatmap requested");
 
-        metrics.getInsightsFrictionCounter().increment();
+        metrics.incrementInsights("friction");
         audit("friction", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
@@ -177,7 +177,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights social trend requested");
 
-        metrics.getInsightsSocialCounter().increment();
+        metrics.incrementInsights("social");
         audit("social", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
@@ -206,7 +206,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights discipline trend requested");
 
-        metrics.getInsightsDisciplineCounter().increment();
+        metrics.incrementInsights("discipline");
         audit("discipline", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
@@ -235,7 +235,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights summary requested");
 
-        metrics.getInsightsSummaryCounter().increment();
+        metrics.incrementInsights("summary");
         audit("summary", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
@@ -262,7 +262,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights today snapshot requested");
 
-        metrics.getInsightsTodayCounter().increment();
+        metrics.incrementInsights("today");
         audit("today", userId, null);
 
         return dailyBehaviorMetricRepository.findTopByUserIdOrderByMetricDateDesc(userId)
@@ -295,7 +295,7 @@ public class InsightsServiceImpl implements InsightsService {
                 .addKeyValue("traceId", traceId)
                 .log("Insights mood cloud requested");
 
-        metrics.getInsightsMoodsCounter().increment();
+        metrics.incrementInsights("moods");
         audit("moods", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
@@ -366,7 +366,7 @@ public class InsightsServiceImpl implements InsightsService {
         String details = days == null
                 ? "insights." + endpoint
                 : "insights." + endpoint + " days=" + days;
-        securityAuditService.log(SecurityEventType.INSIGHTS_VIEWED, email, userId, null, null, details, true);
+        businessEventService.log(BusinessEventType.INSIGHTS_VIEWED, email, userId, details, true);
     }
 
     private static final class EmptySummary implements DailyBehaviorMetricSummaryProjection {

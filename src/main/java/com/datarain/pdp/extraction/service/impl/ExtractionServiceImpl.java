@@ -14,8 +14,8 @@ import com.datarain.pdp.extraction.repository.ExtractionRepository;
 import com.datarain.pdp.extraction.repository.dto.AiExtractionResponse;
 import com.datarain.pdp.extraction.service.ExtractionService;
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
-import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
-import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.audit.BusinessEventService;
+import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.infrastructure.security.web.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ public class ExtractionServiceImpl implements ExtractionService {
     private final ExtractionRepository extractionRepository;
     private final ExtractionMapper extractionMapper;
     private final PdpMetrics metrics;
-    private final SecurityAuditService securityAuditService;
+    private final BusinessEventService businessEventService;
 
     @Override
     public ExtractionResponse extract(ExtractionRequest request) {
@@ -100,12 +100,10 @@ public class ExtractionServiceImpl implements ExtractionService {
         try {
             T response = action.get();
 
-            securityAuditService.log(
-                    SecurityEventType.EXTRACTION_REQUESTED,
+            businessEventService.log(
+                    BusinessEventType.EXTRACTION_REQUESTED,
                     actor.email(),
                     actor.userId(),
-                    null,
-                    null,
                     "Extraction requested for endpoint: " + endpoint,
                     true
             );
@@ -113,12 +111,10 @@ public class ExtractionServiceImpl implements ExtractionService {
             return response;
         } catch (RuntimeException ex) {
             metrics.getExtractionFailedCounter().increment();
-            securityAuditService.log(
-                    SecurityEventType.EXTRACTION_REQUESTED,
+            businessEventService.log(
+                    BusinessEventType.EXTRACTION_REQUESTED,
                     actor.email(),
                     actor.userId(),
-                    null,
-                    null,
                     "Extraction endpoint " + endpoint + " failed: " + ex.getClass().getSimpleName(),
                     false
             );

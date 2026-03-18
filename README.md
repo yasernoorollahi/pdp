@@ -1,6 +1,6 @@
 # Personal Data Platform (PDP)
 
-A production-style Spring Boot backend for secure user data management, AI-powered message understanding, moderation workflows, and operational observability.
+A production-style Spring Boot backend for secure user data management, AI-powered message understanding, and operational observability.
 
 ## Table of Contents
 
@@ -26,10 +26,8 @@ PDP is a layered Java 21 / Spring Boot 3.5 service that provides:
 
 - JWT auth + refresh token lifecycle
 - Role-based access (`ROLE_USER`, `ROLE_ADMIN`, internal `ROLE_SYSTEM` paths)
-- Item lifecycle management with domain events
 - User message ingestion and asynchronous AI enrichment
 - AI signal storage and admin analytics endpoints
-- Moderation case management
 - Rate limiting, audit logging, health/metrics endpoints, and job monitoring
 
 
@@ -44,10 +42,8 @@ A deep dive into the architecture and design decisions behind PDP.
 
 - Authentication: register, login, refresh, logout, logout-all
 - User management: profile, admin user controls (enable/unlock)
-- Item APIs: CRUD-like flows with archive/restore behavior
 - Extraction APIs: facts/intent/tone/context/cognitive/topics/classify/signals
 - AI signal engine: batch pipeline over useful user messages
-- Moderation: admin-managed case lifecycle (approve/reject/auto-block)
 - Monitoring: business stats, system overview, recent job execution logs
 
 ## Tech Stack
@@ -88,14 +84,6 @@ Cross-cutting:
   Metrics + Health + Job Monitoring
 ```
 
-### Event-Driven Side Flows
-
-`ItemCreatedEvent` is published by the item service and consumed by listeners for:
-
-- notification preparation
-- behavioral analytics logging
-- audit trail logging
-
 ## AI Processing Pipeline
 
 PDP has a two-stage async pipeline for user messages:
@@ -119,7 +107,6 @@ PDP has a two-stage async pipeline for user messages:
 | Job | Purpose | Trigger |
 |---|---|---|
 | `PurgeExpiredRefreshTokensJob` | Deletes expired refresh tokens | Every 1 minute |
-| `ExpireArchivedItemsJob` | Deletes archived items older than retention cutoff | Every 1 minute |
 | `NotificationEmailJob` | Marks pending notifications as sent | Every hour |
 | `UserMessageAnalysisJob` | Classification stage for pending messages | `jobs.user-message-analysis.cron` (default: every 2 min) |
 | `AiSignalEngineJob` | Signal extraction stage for useful messages | `jobs.ai-signal-engine.cron` (default: every 3 min) |
@@ -133,12 +120,10 @@ Base path groups:
 
 - `/api/auth` (public + authenticated logout flows)
 - `/api/users` (admin + self)
-- `/api/items`
 - `/api/user-messages`
 - `/api/extraction`
 - `/api/admin` (monitoring)
 - `/api/admin/ai-signal-engine`
-- `/api/admin/moderation/cases`
 
 Docs and ops endpoints:
 
@@ -150,7 +135,8 @@ Docs and ops endpoints:
 Main tables (via Flyway migrations):
 
 - Identity/security: `users`, `user_roles`, `refresh_tokens`, `security_audit_logs`
-- Core content: `items`, `notifications`, `moderation_cases`
+- Business/ops audit: `business_event_logs`
+- Core content: `notifications`
 - AI/message pipeline: `user_messages`, `message_signals`
 - Analytics foundation: `daily_behavior_metrics`, `user_entities`, `user_activities`, `user_topics`, `intent_items`, `user_preferences`, `cognitive_states`
 - Ops: `job_execution_log`
@@ -161,7 +147,7 @@ Schema design highlights:
 - audit columns (`created_at`, `updated_at`, etc.)
 - JSONB storage for extracted signals
 - indexes for job scans and query-heavy filters
-- status constraints for pipeline and moderation states
+- status constraints for pipeline states
 
 ## Security Model
 
@@ -248,11 +234,9 @@ Before publishing or deploying publicly:
 src/main/java/com/datarain/pdp
   auth/             # auth + tokens
   user/             # user admin and self profile
-  item/             # item lifecycle + events
   message/          # user messages + analysis state
   extraction/       # AI extraction endpoints/integration
   signal/           # signal orchestration + storage
-  moderation/       # moderation case management
   notification/     # notification preparation + dispatch job
   admin/            # monitoring APIs
   infrastructure/   # security, jobs, metrics, health, external clients

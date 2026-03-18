@@ -17,14 +17,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "notifications",
         indexes = {
-                @Index(name = "idx_notifications_item_id", columnList = "item_id"),
                 @Index(name = "idx_notifications_user_id", columnList = "user_id"),
                 @Index(name = "idx_notifications_status", columnList = "status")
         })
 public class NotificationEntity extends AuditableEntity {
-
-    @Column(name = "item_id", nullable = false)
-    private UUID itemId;
 
     @Column(name = "user_id")
     private UUID userId;

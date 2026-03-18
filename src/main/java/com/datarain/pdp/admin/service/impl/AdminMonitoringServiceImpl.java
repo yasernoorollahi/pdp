@@ -12,8 +12,8 @@ import com.datarain.pdp.admin.service.AdminMonitoringService;
 import com.datarain.pdp.admin.service.SystemOverviewService;
 import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
-import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
-import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.audit.BusinessEventService;
+import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.infrastructure.security.web.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ public class AdminMonitoringServiceImpl implements AdminMonitoringService {
 
     private final AdminMonitoringRepository adminMonitoringRepository;
     private final SystemOverviewService systemOverviewService;
-    private final SecurityAuditService securityAuditService;
+    private final BusinessEventService businessEventService;
     private final PdpMetrics metrics;
 
     @Override
@@ -57,8 +57,7 @@ public class AdminMonitoringServiceImpl implements AdminMonitoringService {
                 .log("Admin system overview requested");
 
         metrics.getAdminSystemOverviewCounter().increment();
-        securityAuditService.log(SecurityEventType.ADMIN_SYSTEM_OVERVIEW_VIEWED, email, userId,
-                httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"),
+        businessEventService.log(BusinessEventType.ADMIN_SYSTEM_OVERVIEW_VIEWED, email, userId,
                 "jobsLimit=" + jobsLimit, true);
 
         BusinessStatsResponse businessStats = getBusinessStatsInternal();

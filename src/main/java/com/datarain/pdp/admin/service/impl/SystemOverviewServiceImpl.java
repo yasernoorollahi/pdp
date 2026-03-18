@@ -2,7 +2,6 @@ package com.datarain.pdp.admin.service.impl;
 
 import com.datarain.pdp.admin.dto.SystemOverviewResponse;
 import com.datarain.pdp.admin.service.SystemOverviewService;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -48,8 +47,7 @@ public class SystemOverviewServiceImpl implements SystemOverviewService {
                         readGauge("hikaricp.connections.pending"),
                         readGauge("hikaricp.connections.max"),
                         readGauge("hikaricp.connections.min")
-                ),
-                readCounter("pdp.item.created")
+                )
         );
 
         return new SystemOverviewResponse(
@@ -107,11 +105,6 @@ public class SystemOverviewServiceImpl implements SystemOverviewService {
     private double readGauge(String meterName, String tagKey, String tagValue) {
         Gauge gauge = meterRegistry.find(meterName).tag(tagKey, tagValue).gauge();
         return gauge != null ? gauge.value() : 0.0d;
-    }
-
-    private double readCounter(String meterName) {
-        Counter counter = meterRegistry.find(meterName).counter();
-        return counter != null ? counter.count() : 0.0d;
     }
 
     private double readTimerCount(String meterName) {

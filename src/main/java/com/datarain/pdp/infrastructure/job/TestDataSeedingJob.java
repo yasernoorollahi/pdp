@@ -10,19 +10,9 @@ import com.datarain.pdp.infrastructure.security.Role;
 import com.datarain.pdp.infrastructure.security.audit.SecurityAuditLog;
 import com.datarain.pdp.infrastructure.security.audit.SecurityAuditLogRepository;
 import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
-import com.datarain.pdp.item.entity.Item;
-import com.datarain.pdp.item.entity.ItemStatus;
-import com.datarain.pdp.item.entity.ItemType;
-import com.datarain.pdp.item.repository.ItemRepository;
 import com.datarain.pdp.notification.entity.NotificationEntity;
 import com.datarain.pdp.notification.entity.NotificationStatus;
 import com.datarain.pdp.notification.repository.NotificationRepository;
-import com.datarain.pdp.moderation.entity.ModerationCase;
-import com.datarain.pdp.moderation.entity.ModerationReasonCategory;
-import com.datarain.pdp.moderation.entity.ModerationSource;
-import com.datarain.pdp.moderation.entity.ModerationStatus;
-import com.datarain.pdp.moderation.entity.ModerationTargetType;
-import com.datarain.pdp.moderation.repository.ModerationCaseRepository;
 import com.datarain.pdp.testdata.service.DailyBehaviorMetricsSeedService;
 import com.datarain.pdp.testdata.service.model.DailyBehaviorMetricsSeedResult;
 import com.datarain.pdp.user.entity.User;
@@ -50,17 +40,14 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
     private static final String SEED_MARKER_EMAIL = "seed.user.00@pdp.local";
 
     private final UserRepository userRepository;
-    private final ItemRepository itemRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final NotificationRepository notificationRepository;
-    private final ModerationCaseRepository moderationCaseRepository;
     private final SecurityAuditLogRepository securityAuditLogRepository;
     private final JobExecutionLogRepository jobExecutionLogRepository;
     private final PasswordEncoder passwordEncoder;
     private final DailyBehaviorMetricsSeedService dailyBehaviorMetricsSeedService;
 
     private final int usersCount;
-    private final int itemsPerUser;
     private final int refreshTokensPerUser;
     private final boolean forceSeed;
     private final boolean dailyBehaviorEnabled;
@@ -68,17 +55,14 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
     private final int dailyBehaviorDays;
 
     public TestDataSeedingJob(UserRepository userRepository,
-                              ItemRepository itemRepository,
                               RefreshTokenRepository refreshTokenRepository,
                               NotificationRepository notificationRepository,
-                              ModerationCaseRepository moderationCaseRepository,
                               SecurityAuditLogRepository securityAuditLogRepository,
                               JobExecutionLogRepository jobExecutionLogRepository,
                               PasswordEncoder passwordEncoder,
                               DailyBehaviorMetricsSeedService dailyBehaviorMetricsSeedService,
                               JobMonitoringService jobMonitoringService,
                               @Value("${jobs.test-data.users:20}") int usersCount,
-                              @Value("${jobs.test-data.items-per-user:5}") int itemsPerUser,
                               @Value("${jobs.test-data.refresh-tokens-per-user:2}") int refreshTokensPerUser,
                               @Value("${jobs.test-data.force:false}") boolean forceSeed,
                               @Value("${jobs.test-data.daily-behavior.enabled:true}") boolean dailyBehaviorEnabled,
@@ -86,16 +70,13 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
                               @Value("${jobs.test-data.daily-behavior.days:30}") int dailyBehaviorDays) {
         super(jobMonitoringService);
         this.userRepository = userRepository;
-        this.itemRepository = itemRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.notificationRepository = notificationRepository;
-        this.moderationCaseRepository = moderationCaseRepository;
         this.securityAuditLogRepository = securityAuditLogRepository;
         this.jobExecutionLogRepository = jobExecutionLogRepository;
         this.passwordEncoder = passwordEncoder;
         this.dailyBehaviorMetricsSeedService = dailyBehaviorMetricsSeedService;
         this.usersCount = usersCount;
-        this.itemsPerUser = itemsPerUser;
         this.refreshTokensPerUser = refreshTokensPerUser;
         this.forceSeed = forceSeed;
         this.dailyBehaviorEnabled = dailyBehaviorEnabled;
@@ -120,15 +101,13 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
         }
 
         List<User> users = markerExists ? loadOrCreateSeedUsers() : createUsers();
-        List<Item> items = createItems(users);
         long refreshTokens = createRefreshTokens(users);
-        long notifications = createNotifications(users, items);
-        long moderationCases = createModerationCases(users, items);
+        long notifications = createNotifications(users);
         long audits = createSecurityAudits(users);
         long syntheticJobLogs = createSyntheticJobLogs();
         long dailyBehaviorMetrics = seedDailyBehaviorMetrics();
 
-        return users.size() + items.size() + refreshTokens + notifications + moderationCases + audits + syntheticJobLogs
+        return users.size() + refreshTokens + notifications + audits + syntheticJobLogs
                 + dailyBehaviorMetrics;
     }
 
@@ -214,31 +193,6 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
         return user;
     }
 
-    private List<Item> createItems(List<User> users) {
-        List<Item> items = new ArrayList<>(users.size() * itemsPerUser);
-        ItemType[] types = ItemType.values();
-
-        for (int u = 0; u < users.size(); u++) {
-            for (int i = 0; i < itemsPerUser; i++) {
-                Item item = new Item();
-                item.setTitle("Seed Item " + u + "-" + i);
-                item.setDescription("Debug dataset for filtering/sorting and status flows");
-                item.setContent("Generated content for user=" + u + ", item=" + i);
-                item.setType(types[(u + i) % types.length]);
-
-                if (i % 3 == 0) {
-                    item.setStatus(ItemStatus.ARCHIVED);
-                    item.setArchivedAt(Instant.now().minus((long) (i + u + 2), ChronoUnit.DAYS));
-                } else {
-                    item.setStatus(ItemStatus.ACTIVE);
-                }
-
-                items.add(item);
-            }
-        }
-
-        return itemRepository.saveAll(items);
-    }
 
     private long createRefreshTokens(List<User> users) {
         List<RefreshToken> tokens = new ArrayList<>(users.size() * refreshTokensPerUser);
@@ -271,18 +225,21 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
         return tokens.size();
     }
 
-    private long createNotifications(List<User> users, List<Item> items) {
+    private long createNotifications(List<User> users) {
+        if (users.isEmpty()) {
+            return 0;
+        }
+
         List<NotificationEntity> notifications = new ArrayList<>();
         NotificationStatus[] statuses = NotificationStatus.values();
 
-        for (int i = 0; i < items.size(); i++) {
+        for (int i = 0; i < users.size(); i++) {
             if (i % 2 != 0) {
                 continue;
             }
 
             NotificationEntity notification = new NotificationEntity();
-            notification.setItemId(items.get(i).getId());
-            notification.setUserId(i % 5 == 0 ? null : users.get(i % users.size()).getId());
+            notification.setUserId(i % 5 == 0 ? null : users.get(i).getId());
             notification.setStatus(statuses[i % statuses.length]);
             notifications.add(notification);
         }
@@ -325,88 +282,12 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
         return logs.size();
     }
 
-    private long createModerationCases(List<User> users, List<Item> items) {
-        if (users.isEmpty()) {
-            return 0;
-        }
-
-        List<ModerationCase> moderationCases = new ArrayList<>();
-        ModerationReasonCategory[] reasonCategories = ModerationReasonCategory.values();
-        ModerationStatus[] statuses = ModerationStatus.values();
-        ModerationSource[] sources = ModerationSource.values();
-        Instant now = Instant.now();
-
-        int totalCases = Math.max(16, reasonCategories.length * 2);
-        for (int i = 0; i < totalCases; i++) {
-            ModerationCase moderationCase = new ModerationCase();
-
-            ModerationTargetType preferredTargetType = i % 2 == 0 ? ModerationTargetType.USER : ModerationTargetType.CONTENT;
-            ModerationTargetType targetType = preferredTargetType == ModerationTargetType.CONTENT && items.isEmpty()
-                    ? ModerationTargetType.USER
-                    : preferredTargetType;
-            moderationCase.setTargetType(targetType);
-
-            UUID targetId = targetType == ModerationTargetType.USER
-                    ? users.get(i % users.size()).getId()
-                    : items.get(i % items.size()).getId();
-            moderationCase.setTargetId(targetId);
-
-            ModerationStatus status = statuses[i % statuses.length];
-            moderationCase.setStatus(status);
-
-            int riskScore = switch (status) {
-                case PENDING -> (i * 11) % 71;
-                case APPROVED -> 10 + (i * 7) % 35;
-                case REJECTED -> 45 + (i * 9) % 45;
-                case AUTO_BLOCKED -> 80 + (i * 5) % 21;
-            };
-            if (i == 0) {
-                riskScore = 0;
-            } else if (i == 1) {
-                riskScore = 100;
-            }
-            moderationCase.setRiskScore(riskScore);
-
-            ModerationSource source = sources[i % sources.length];
-            moderationCase.setSource(source);
-
-            Double aiConfidence = null;
-            if (source == ModerationSource.AI) {
-                aiConfidence = switch (i % 4) {
-                    case 0 -> 0.0d;
-                    case 1 -> 1.0d;
-                    case 2 -> 0.37d;
-                    default -> 0.86d;
-                };
-            } else if (i % 5 == 0) {
-                aiConfidence = 0.2d;
-            }
-            moderationCase.setAiConfidence(aiConfidence);
-
-            moderationCase.setReasonCategory(reasonCategories[i % reasonCategories.length]);
-
-            if (status == ModerationStatus.PENDING) {
-                moderationCase.setComment("Awaiting moderation decision");
-            } else {
-                moderationCase.setReviewedBy(users.get((i + 1) % users.size()).getId());
-                moderationCase.setReviewedAt(now.minus(i + 2L, ChronoUnit.HOURS));
-                moderationCase.setComment("Seeded " + status.name().toLowerCase() + " decision for moderation test flow");
-            }
-
-            moderationCases.add(moderationCase);
-        }
-
-        moderationCaseRepository.saveAll(moderationCases);
-        return moderationCases.size();
-    }
-
     private long createSyntheticJobLogs() {
         List<JobExecutionLog> logs = new ArrayList<>();
         Instant now = Instant.now();
 
         logs.add(buildJobLog("NotificationEmailJob", now.minus(5, ChronoUnit.HOURS), 1200, JobExecutionStatus.SUCCESS, 18, null));
         logs.add(buildJobLog("PurgeExpiredRefreshTokensJob", now.minus(3, ChronoUnit.HOURS), 500, JobExecutionStatus.SUCCESS, 6, null));
-        logs.add(buildJobLog("ExpireArchivedItemsJob", now.minus(2, ChronoUnit.HOURS), 850, JobExecutionStatus.SUCCESS, 4, null));
         logs.add(buildJobLog("NotificationEmailJob", now.minus(1, ChronoUnit.HOURS), 1400, JobExecutionStatus.FAILED, 0, "SMTP timeout during integration test"));
 
         jobExecutionLogRepository.saveAll(logs);

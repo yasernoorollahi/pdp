@@ -6,8 +6,8 @@ import com.datarain.pdp.extraction.dto.ExtractionRequest;
 import com.datarain.pdp.extraction.service.ExtractionService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
-import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
-import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.audit.BusinessEventService;
+import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.infrastructure.security.web.SecurityUtils;
 import com.datarain.pdp.message.dto.UserMessageCreateRequest;
 import com.datarain.pdp.message.dto.UserMessageProcessedRequest;
@@ -44,7 +44,7 @@ public class UserMessageServiceImpl implements UserMessageService {
     private final UserMessageRepository userMessageRepository;
     private final UserMessageMapper userMessageMapper;
     private final ExtractionService extractionService;
-    private final SecurityAuditService securityAuditService;
+    private final BusinessEventService businessEventService;
     private final PdpMetrics metrics;
 
     @Override
@@ -75,12 +75,10 @@ public class UserMessageServiceImpl implements UserMessageService {
                 .addKeyValue("messageDate", saved.getMessageDate())
                 .log("User message created");
 
-        securityAuditService.log(
-                SecurityEventType.USER_MESSAGE_CREATED,
+        businessEventService.log(
+                BusinessEventType.USER_MESSAGE_CREATED,
                 currentEmail,
                 currentUserId,
-                null,
-                null,
                 "User message created: " + saved.getId(),
                 true
         );
@@ -122,12 +120,10 @@ public class UserMessageServiceImpl implements UserMessageService {
                 .addKeyValue("messageDate", saved.getMessageDate())
                 .log("User message updated");
 
-        securityAuditService.log(
-                SecurityEventType.USER_MESSAGE_UPDATED,
+        businessEventService.log(
+                BusinessEventType.USER_MESSAGE_UPDATED,
                 currentEmail,
                 currentUserId,
-                null,
-                null,
                 "User message updated: " + saved.getId(),
                 true
         );
@@ -155,12 +151,10 @@ public class UserMessageServiceImpl implements UserMessageService {
                 .addKeyValue("processed", saved.isProcessed())
                 .log("User message processed state changed");
 
-        securityAuditService.log(
-                SecurityEventType.USER_MESSAGE_PROCESSED,
+        businessEventService.log(
+                BusinessEventType.USER_MESSAGE_PROCESSED,
                 currentEmail,
                 currentUserId,
-                null,
-                null,
                 "User message processed state changed to " + saved.isProcessed() + ": " + saved.getId(),
                 true
         );
@@ -184,12 +178,10 @@ public class UserMessageServiceImpl implements UserMessageService {
                 .addKeyValue("userId", currentUserId)
                 .log("User message deleted");
 
-        securityAuditService.log(
-                SecurityEventType.USER_MESSAGE_DELETED,
+        businessEventService.log(
+                BusinessEventType.USER_MESSAGE_DELETED,
                 currentEmail,
                 currentUserId,
-                null,
-                null,
                 "User message deleted: " + id,
                 true
         );
@@ -286,11 +278,9 @@ public class UserMessageServiceImpl implements UserMessageService {
                     .addKeyValue("signalScore", result.signalScore())
                     .log("User message analyzed");
 
-            securityAuditService.log(
-                    SecurityEventType.USER_MESSAGE_PROCESSED,
+            businessEventService.log(
+                    BusinessEventType.USER_MESSAGE_PROCESSED,
                     "system@pdp.local",
-                    null,
-                    null,
                     null,
                     "User message analyzed by classifier: " + message.getId() + " status=" + result.analysisStatus(),
                     true
@@ -312,11 +302,9 @@ public class UserMessageServiceImpl implements UserMessageService {
                     .addKeyValue("errorType", ex.getClass().getSimpleName())
                     .log("User message analysis failed");
 
-            securityAuditService.log(
-                    SecurityEventType.USER_MESSAGE_PROCESSED,
+            businessEventService.log(
+                    BusinessEventType.USER_MESSAGE_PROCESSED,
                     "system@pdp.local",
-                    null,
-                    null,
                     null,
                     "User message classifier failed: " + message.getId() + " error=" + ex.getClass().getSimpleName(),
                     false

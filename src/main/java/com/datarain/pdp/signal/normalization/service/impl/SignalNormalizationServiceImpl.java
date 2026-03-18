@@ -2,8 +2,8 @@ package com.datarain.pdp.signal.normalization.service.impl;
 
 import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
-import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
-import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.audit.BusinessEventService;
+import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.signal.entity.MessageSignal;
 import com.datarain.pdp.signal.normalization.dto.ParsedSignal;
 import com.datarain.pdp.signal.normalization.service.ActivityNormalizationService;
@@ -53,7 +53,7 @@ public class SignalNormalizationServiceImpl implements SignalNormalizationServic
     private final ToolNormalizationService toolNormalizationService;
     private final ProjectNormalizationService projectNormalizationService;
     private final MetricsAggregationService metricsAggregationService;
-    private final SecurityAuditService securityAuditService;
+    private final BusinessEventService businessEventService;
     private final PdpMetrics metrics;
 
     @Value("${jobs.signal-normalization.version:1}")
@@ -124,12 +124,10 @@ public class SignalNormalizationServiceImpl implements SignalNormalizationServic
                         .addKeyValue("traceId", traceId)
                         .log("Signal normalization completed");
 
-                securityAuditService.log(
-                        SecurityEventType.SIGNAL_NORMALIZATION_EXECUTED,
+                businessEventService.log(
+                        BusinessEventType.SIGNAL_NORMALIZATION_EXECUTED,
                         SYSTEM_EMAIL,
                         signal.getUserId(),
-                        null,
-                        null,
                         "Signal normalized: " + signalId,
                         true
                 );
@@ -145,12 +143,10 @@ public class SignalNormalizationServiceImpl implements SignalNormalizationServic
                         .setCause(ex)
                         .log("Signal normalization failed");
 
-                securityAuditService.log(
-                        SecurityEventType.SIGNAL_NORMALIZATION_EXECUTED,
+                businessEventService.log(
+                        BusinessEventType.SIGNAL_NORMALIZATION_EXECUTED,
                         SYSTEM_EMAIL,
                         signal.getUserId(),
-                        null,
-                        null,
                         "Signal normalization failed: " + signalId + " error=" + ex.getClass().getSimpleName(),
                         false
                 );

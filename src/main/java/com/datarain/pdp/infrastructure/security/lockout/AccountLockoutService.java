@@ -2,6 +2,8 @@ package com.datarain.pdp.infrastructure.security.lockout;
 
 import com.datarain.pdp.exception.base.BaseBusinessException;
 import com.datarain.pdp.exception.errors.ErrorCode;
+import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
+import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
 import com.datarain.pdp.user.entity.User;
 import com.datarain.pdp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,14 +28,25 @@ public class AccountLockoutService {
     private static final int LOCK_DURATION_MINUTES = 15;
 
     private final UserRepository userRepository;
+    private final SecurityAuditService securityAuditService;
 
     @Transactional
     public void recordFailedAttempt(User user) {
-        user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+        int attempts = user.getFailedLoginAttempts() + 1;
+        user.setFailedLoginAttempts(attempts);
 
-        if (user.getFailedLoginAttempts() >= MAX_FAILED_ATTEMPTS) {
+        if (attempts >= MAX_FAILED_ATTEMPTS && user.getLockedUntil() == null) {
             user.setLockedUntil(Instant.now().plus(LOCK_DURATION_MINUTES, ChronoUnit.MINUTES));
             log.warn("Account locked due to too many failed attempts: {}", user.getEmail());
+            securityAuditService.log(
+                    SecurityEventType.ACCOUNT_LOCKED,
+                    user.getEmail(),
+                    user.getId(),
+                    null,
+                    null,
+                    "Account locked after " + attempts + " failed attempts",
+                    true
+            );
         }
 
         userRepository.save(user);

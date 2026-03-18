@@ -3,8 +3,8 @@ package com.datarain.pdp.testdata.service.impl;
 import com.datarain.pdp.exception.business.UserEmailNotFoundException;
 import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
-import com.datarain.pdp.infrastructure.security.audit.SecurityAuditService;
-import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
+import com.datarain.pdp.infrastructure.audit.BusinessEventService;
+import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.signal.normalization.entity.DailyBehaviorMetric;
 import com.datarain.pdp.signal.normalization.repository.DailyBehaviorMetricRepository;
 import com.datarain.pdp.testdata.service.DailyBehaviorMetricsSeedService;
@@ -168,7 +168,7 @@ public class DailyBehaviorMetricsSeedServiceImpl implements DailyBehaviorMetrics
     private final DailyBehaviorMetricRepository dailyBehaviorMetricRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
-    private final SecurityAuditService securityAuditService;
+    private final BusinessEventService businessEventService;
     private final PdpMetrics metrics;
 
     @Override
@@ -253,7 +253,7 @@ public class DailyBehaviorMetricsSeedServiceImpl implements DailyBehaviorMetrics
         String details = "Seeded daily behavior metrics for " + normalizedEmail +
                 " from " + fromDate + " to " + toDate +
                 " (inserted=" + metricsToInsert.size() + ", skipped=" + skipped + ")";
-        securityAuditService.log(SecurityEventType.TEST_DATA_SEEDED, normalizedEmail, userId, null, null, details, true);
+        businessEventService.log(BusinessEventType.TEST_DATA_SEEDED, normalizedEmail, userId, details, true);
 
         return new DailyBehaviorMetricsSeedResult(
                 userId,
