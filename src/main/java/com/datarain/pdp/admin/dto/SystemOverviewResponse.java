@@ -18,8 +18,7 @@ public record SystemOverviewResponse(
             double processUptimeSeconds,
             double httpServerRequestsCount,
             double httpServerRequestsMeanSeconds,
-            HikariSnapshot hikari,
-            double itemCreatedCount
+            HikariSnapshot hikari
     ) {
     }
 

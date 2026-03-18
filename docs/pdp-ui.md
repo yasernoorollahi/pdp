@@ -27,7 +27,7 @@ Key folders under `src/`:
 
 - `app/` — App root component
 - `router/` — routes and guards
-- `features/` — feature pages (auth, insights, moderation, chat, admin, etc.)
+- `features/` — feature pages (auth, insights, chat, admin, etc.)
 - `components/` — shared layout and UI components
 - `services/` — client-side API services
 - `api/` — axios instance + low-level API wrappers
@@ -108,7 +108,7 @@ api.interceptors.request.use((config) => {
 `chat.service.ts` is designed to handle inconsistent payload shapes from the backend.
 
 Key ideas:
-- Extract messages from `content`, `items`, `messages`, or `data`.
+- Extract messages from `content`, `messages`, or `data`.
 - Normalize each message to `{id, text, sender, createdAt, status}`.
 - Deduplicate by `id + createdAt`.
 - Sort by timestamp.

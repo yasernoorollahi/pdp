@@ -21,7 +21,7 @@
 
 ## Auditing
 
-There are three layers of auditing:
+There are two layers of auditing:
 
 1. **Security audit logs**
    - `SecurityAuditService` writes to `security_audit_logs`.
@@ -30,16 +30,12 @@ There are three layers of auditing:
 
 2. **Business event logs**
    - `BusinessEventService` writes to `business_event_logs`.
-   - Events include extraction, moderation actions, user message lifecycle, signal engine/normalization, insights views, admin overview views, test data seeds.
+   - Events include extraction actions, user message lifecycle, signal engine/normalization, insights views, admin overview views, test data seeds.
    - Writes asynchronously so it does not slow the main request.
-
-3. **Domain audit events**
-   - `AuditTrailListener` listens for domain events (e.g., `ItemCreatedEvent`) and logs them.
 
 **Why multiple layers**
 - Security audit logs are structured, searchable, and persist in DB.
 - Business event logs capture product/ops signals without mixing with security events.
-- Domain audit logs are light-weight operational signals via logging.
 
 ## Tracing
 
@@ -90,4 +86,4 @@ HTTP request
 - Exposed via `/actuator/prometheus`.
 - Used in services to count events and measure duration.
 
-This directly answers the "PdpMetrics" question: it is the place you track product-level counters (logins, item created, extraction requests, insights calls) and key latency timers.
+This directly answers the "PdpMetrics" question: it is the place you track product-level counters (logins, extraction requests, insights calls) and key latency timers.

@@ -5,8 +5,6 @@ import com.datarain.pdp.admin.repository.AdminMonitoringRepository;
 import com.datarain.pdp.auth.repository.RefreshTokenRepository;
 import com.datarain.pdp.infrastructure.job.monitoring.JobExecutionLog;
 import com.datarain.pdp.infrastructure.job.monitoring.JobExecutionLogRepository;
-import com.datarain.pdp.item.entity.ItemStatus;
-import com.datarain.pdp.item.repository.ItemRepository;
 import com.datarain.pdp.notification.entity.NotificationStatus;
 import com.datarain.pdp.notification.repository.NotificationRepository;
 import com.datarain.pdp.user.repository.UserRepository;
@@ -22,7 +20,6 @@ import java.time.Instant;
 public class AdminMonitoringRepositoryImpl implements AdminMonitoringRepository {
 
     private final UserRepository userRepository;
-    private final ItemRepository itemRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final NotificationRepository notificationRepository;
     private final JobExecutionLogRepository jobExecutionLogRepository;
@@ -33,9 +30,6 @@ public class AdminMonitoringRepositoryImpl implements AdminMonitoringRepository 
                 userRepository.count(),
                 userRepository.countByEnabled(true),
                 userRepository.countByLockedUntilAfter(now),
-                itemRepository.count(),
-                itemRepository.countByStatus(ItemStatus.ACTIVE),
-                itemRepository.countByStatus(ItemStatus.ARCHIVED),
                 refreshTokenRepository.count(),
                 refreshTokenRepository.countByRevokedFalseAndExpiryDateAfter(now),
                 notificationRepository.countByStatus(NotificationStatus.PENDING)

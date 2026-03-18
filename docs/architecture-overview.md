@@ -40,7 +40,6 @@ User -> PDP UI -> Core API -> AI Signals -> Core API -> DB -> UI
 - **Auth & Security**: JWT access tokens, refresh tokens, user roles, account lockouts, security auditing.
 - **Messages & Signals**: user messages are collected and analyzed via AI extraction, then normalized into signals and metrics.
 - **Insights**: aggregates daily behavior metrics into timeline and summary insights.
-- **Moderation**: moderation cases and transitions.
 - **Jobs**: background jobs for processing, normalization, test data seeding, cleanup.
 - **Observability**: trace IDs, structured logging, micrometer metrics, health endpoints.
 

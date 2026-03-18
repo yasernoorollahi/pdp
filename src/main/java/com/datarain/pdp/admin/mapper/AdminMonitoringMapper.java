@@ -15,9 +15,6 @@ public final class AdminMonitoringMapper {
                 stats.totalUsers(),
                 stats.activeUsers(),
                 stats.lockedUsers(),
-                stats.totalItems(),
-                stats.activeItems(),
-                stats.archivedItems(),
                 stats.totalRefreshTokens(),
                 stats.activeRefreshTokens(),
                 stats.pendingNotifications()

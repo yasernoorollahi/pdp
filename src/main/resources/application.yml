@@ -18,17 +18,16 @@ jobs.signal-normalization.batch-size: 100
 jobs.signal-normalization.delay-ms: 5000
 jobs.signal-normalization.version: 1
 
-jobs.test-data.enabled: true
+jobs.test-data.enabled: false
 jobs.test-data.force: false
 jobs.test-data.users: 50
-jobs.test-data.items-per-user: 50
 jobs.test-data.refresh-tokens-per-user: 50
-jobs.test-data.daily-behavior.enabled: true
-jobs.test-data.daily-behavior.user-email: yaser@pdp.com
+jobs.test-data.daily-behavior.enabled: false
+jobs.test-data.daily-behavior.user-email:
 jobs.test-data.daily-behavior.days: 60
 
 #==================== Data Base Configurations ========================
-spring.datasource.url: jdbc:postgresql://localhost:5432/pdp_upgrade
+spring.datasource.url: jdbc:postgresql://localhost:5432/pdp
 spring.datasource.username: pdp_user
 spring.datasource.password: pdp123
 spring.datasource.driver-class-name: org.postgresql.Driver

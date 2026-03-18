@@ -5,7 +5,6 @@
 ## تصویر کلی
 این پروژه یک REST API مبتنی بر Spring Boot است که این بخش‌ها را دارد:
 - احراز هویت با JWT و Refresh Token
-- مدیریت آیتم‌ها (Items) با آرشیو نرم و بازیابی
 - مدیریت کاربران و نقش‌ها (ROLE_USER/ROLE_ADMIN)
 - لاگ و لاگ امنیتی (Audit)
 - Rate Limit روی APIها
@@ -71,31 +70,8 @@
 - سیاست‌ها (`RateLimitPolicyProvider`):
   - `/api/auth/login` → 50 درخواست در ۱ دقیقه
   - `/api/auth/**` → 20 درخواست در ۱ دقیقه
-  - `/api/items/**` → 100 درخواست در ۱ دقیقه
   - سایر مسیرها → 50 درخواست در ۱ دقیقه
 - در صورت عبور از حد، پاسخ 429 با JSON تمیز برمی‌گردد.
-
-## Items (آیتم‌ها)
-### ایجاد و مدیریت
-- `POST /api/items` (ROLE_USER یا ROLE_ADMIN)
-- `GET /api/items/{id}`
-- `DELETE /api/items/{id}` (فقط ADMIN) → آرشیو نرم
-- `PUT /api/items/{id}/restore` (فقط ADMIN)
-
-### لیست و جستجو
-- `GET /api/items` با پشتیبانی از:
-  - pagination (`page`, `size`, `sort`)
-  - فیلتر نوع (`type`)
-  - جستجو در عنوان (`search`)
-- از Specification Pattern استفاده شده تا ترکیب فیلترها منعطف باشد.
-
-### وضعیت آیتم‌ها
-- `ACTIVE`
-- `ARCHIVED`
-
-### Domain Events
-- هنگام ساخت آیتم: `ItemCreatedEvent`
-- هنگام آرشیو: `ItemArchivedEvent`
 
 ## کاربران
 - `GET /api/users` (ادمین) → لیست کاربران با DTO امن
@@ -107,7 +83,6 @@
 ## Admin
 - `GET /api/admin/stats` (ROLE_ADMIN)
   - آمار کاربران (کل، فعال، قفل‌شده)
-  - آمار آیتم‌ها (کل، فعال، آرشیو)
   - آمار توکن‌ها (کل، فعال)
   - وضعیت حافظه JVM
 
@@ -120,12 +95,9 @@
 ### Metrics سفارشی (Micrometer)
 - `pdp.auth.login.success`
 - `pdp.auth.login.failed`
-- `pdp.item.created`
-- `pdp.item.archived`
 - `pdp.rate_limit.hit`
 - `pdp.auth.token.refresh`
 - تایمرها:
-  - `pdp.item.create.duration`
   - `pdp.auth.login.duration`
 
 ### Actuator
@@ -144,18 +116,13 @@
   - توکن‌های منقضی را حذف می‌کند.
   - با `jobs.refresh-token.enabled` قابل کنترل است.
 
-- **ExpireArchivedItemsJob**
-  - هر روز ساعت ۳ بامداد اجرا می‌شود.
-  - آیتم‌های آرشیو شده قدیمی‌تر از ۳۰ روز حذف می‌شوند.
-
 - **TestDataSeedingJob**
   - زمان‌بندی‌شده نیست و فقط در startup اجرا می‌شود.
   - به صورت پیش‌فرض خاموش است (`jobs.test-data.enabled: false`).
-  - وقتی روشن شود، داده‌ی متنوع برای جدول‌های `users`, `items`, `refresh_tokens`, `notifications`, `security_audit_logs`, `job_execution_log` می‌سازد.
+  - وقتی روشن شود، داده‌ی متنوع برای جدول‌های `users`, `refresh_tokens`, `notifications`, `security_audit_logs`, `job_execution_log` می‌سازد.
   - برای جلوگیری از تکرار، اگر `seed.user.00@pdp.local` وجود داشته باشد اجرا را Skip می‌کند.
   - حجم دیتا با این تنظیمات کنترل می‌شود:
     - `jobs.test-data.users`
-    - `jobs.test-data.items-per-user`
     - `jobs.test-data.refresh-tokens-per-user`
 
 ## Resilience4j (نمونه خارجی)
@@ -172,7 +139,6 @@
 - Flyway فعال است (`db/migration/V1__baseline.sql`).
 - جداول اصلی:
   - `users`, `user_roles`
-  - `items`
   - `refresh_tokens`
   - `security_audit_logs`
 - یک کاربر ادمین اولیه با ایمیل `admin@pdp.local` ایجاد می‌شود.

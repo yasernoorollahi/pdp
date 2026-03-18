@@ -82,8 +82,7 @@ Add this comment above the access decision and pick one:
 ```
 
 ## Domain Audit / Events
-- Domain events (e.g., `ItemCreatedEvent`) are published in services.
-- Listeners like `AuditTrailListener` / analytics / notifications consume them.
+- Domain events may be published in services when needed.
 
 ### Domain Event Option
 ```

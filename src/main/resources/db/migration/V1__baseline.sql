@@ -25,26 +25,6 @@ CREATE TABLE user_roles (
                             CONSTRAINT fk_user_role FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-CREATE TABLE items (
-                       id UUID PRIMARY KEY,
-                       version BIGINT,
-                       tenant_id UUID,
-                       title VARCHAR(255) NOT NULL,
-                       content TEXT,
-                       description VARCHAR(500),
-                       type VARCHAR(255) NOT NULL,
-                       status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-                       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-                       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-                       created_by UUID,
-                       updated_by UUID,
-                       archived_at TIMESTAMPTZ,
-                       enabled BOOLEAN NOT NULL DEFAULT TRUE,
-                       CONSTRAINT item_type_check CHECK (
-                           type IN ('NOTE', 'LINK', 'IDEA', 'BOOK', 'ARCHIVE', 'TASK')
-                       )
-);
-
 CREATE TABLE refresh_tokens (
                                 id UUID PRIMARY KEY,
                                 version BIGINT,

@@ -17,13 +17,8 @@ public class PdpMetrics {
     // counters
     @Getter private final Counter loginSuccessCounter;
     @Getter private final Counter loginFailedCounter;
-    @Getter private final Counter itemCreatedCounter;
-    @Getter private final Counter itemArchivedCounter;
     @Getter private final Counter rateLimitHitCounter;
     @Getter private final Counter tokenRefreshCounter;
-    @Getter private final Counter moderationCaseCreatedCounter;
-    @Getter private final Counter moderationCaseStateTransitionCounter;
-    @Getter private final Counter moderationCaseAutoBlockedCounter;
     @Getter private final Counter extractionRequestedCounter;
     @Getter private final Counter extractionFailedCounter;
     @Getter private final Counter userMessageCreatedCounter;
@@ -40,7 +35,6 @@ public class PdpMetrics {
     @Getter private final Counter adminSystemOverviewCounter;
 
     // timers - برای اندازه‌گیری زمان عملیات‌های مهم
-    @Getter private final Timer itemCreateTimer;
     @Getter private final Timer authLoginTimer;
 
     private final MeterRegistry registry;
@@ -55,32 +49,12 @@ public class PdpMetrics {
                 .description("تعداد ورود ناموفق")
                 .register(registry);
 
-        this.itemCreatedCounter = Counter.builder("pdp.item.created")
-                .description("تعداد item های ساخته شده")
-                .register(registry);
-
-        this.itemArchivedCounter = Counter.builder("pdp.item.archived")
-                .description("تعداد item های آرشیو شده")
-                .register(registry);
-
         this.rateLimitHitCounter = Counter.builder("pdp.rate_limit.hit")
                 .description("تعداد دفعاتی که rate limit رد شد")
                 .register(registry);
 
         this.tokenRefreshCounter = Counter.builder("pdp.auth.token.refresh")
                 .description("تعداد دفعات refresh token")
-                .register(registry);
-
-        this.moderationCaseCreatedCounter = Counter.builder("pdp.moderation.case.created")
-                .description("تعداد پرونده‌های moderation ایجاد شده")
-                .register(registry);
-
-        this.moderationCaseStateTransitionCounter = Counter.builder("pdp.moderation.case.state.transition")
-                .description("تعداد تغییر وضعیت پرونده‌های moderation")
-                .register(registry);
-
-        this.moderationCaseAutoBlockedCounter = Counter.builder("pdp.moderation.case.auto_blocked")
-                .description("تعداد پرونده‌های auto-block شده")
                 .register(registry);
 
         this.extractionRequestedCounter = Counter.builder("pdp.extraction.requested")
@@ -137,10 +111,6 @@ public class PdpMetrics {
 
         this.adminSystemOverviewCounter = Counter.builder("pdp.admin.system_overview")
                 .description("تعداد درخواست های admin system overview")
-                .register(registry);
-
-        this.itemCreateTimer = Timer.builder("pdp.item.create.duration")
-                .description("زمان ساخت item")
                 .register(registry);
 
         this.authLoginTimer = Timer.builder("pdp.auth.login.duration")

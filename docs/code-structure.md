@@ -18,7 +18,7 @@
 - Admin monitoring endpoints and system overview
 
 ### `audit`
-- Domain audit listeners (e.g., item created events)
+- Business event audit logging
 
 ### `common`
 - Base entities and value objects
@@ -51,14 +51,8 @@ Infrastructure concerns and cross-cutting services:
 ### `insights`
 - Aggregation and API exposure for insight views
 
-### `item`
-- CRUD API for items + domain events
-
 ### `message`
 - User message ingestion, analysis, and processing status
-
-### `moderation`
-- Moderation cases, transitions, admin APIs
 
 ### `notification`
 - Notifications and scheduling

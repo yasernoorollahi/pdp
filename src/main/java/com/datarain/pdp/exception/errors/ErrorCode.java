@@ -23,11 +23,6 @@ public enum ErrorCode {
        Business Errors (Domain level)
        ========================= */
 
-    // موجودیتی با این ID پیدا نشد
-    ITEM_NOT_FOUND,
-
-    // تلاش برای ساخت داده تکراری (مثلاً title یا unique field)
-    DUPLICATE_ITEM,
     DUPLICATE_USER,
     // قانون بیزینسی نقض شده (مثلاً وضعیت آیتم اجازه حذف نمی‌دهد)
     BUSINESS_RULE_VIOLATION,
