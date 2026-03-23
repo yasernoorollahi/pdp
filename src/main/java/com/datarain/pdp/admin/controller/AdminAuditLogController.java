@@ -6,6 +6,8 @@ import com.datarain.pdp.admin.service.AdminAuditLogService;
 import com.datarain.pdp.infrastructure.audit.BusinessEventType;
 import com.datarain.pdp.infrastructure.security.audit.SecurityEventType;
 import jakarta.validation.constraints.Email;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -24,11 +26,13 @@ import java.util.UUID;
 @RequestMapping("/api/admin/audit")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
 @RequiredArgsConstructor
+@Tag(name = "Admin / Audit", description = "Admin access to security and business audit logs.")
 public class AdminAuditLogController {
 
     private final AdminAuditLogService adminAuditLogService;
 
     @GetMapping("/security")
+    @Operation(summary = "List security audit logs with filters and pagination.")
     public Page<SecurityAuditLogResponse> getSecurityAuditLogs(
             @ParameterObject Pageable pageable,
             @RequestParam(required = false) UUID userId,
@@ -39,6 +43,7 @@ public class AdminAuditLogController {
     }
 
     @GetMapping("/business")
+    @Operation(summary = "List business event logs with filters and pagination.")
     public Page<BusinessEventLogResponse> getBusinessEventLogs(
             @ParameterObject Pageable pageable,
             @RequestParam(required = false) UUID userId,

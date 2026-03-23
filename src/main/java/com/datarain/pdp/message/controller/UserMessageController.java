@@ -5,6 +5,8 @@ import com.datarain.pdp.message.dto.UserMessageProcessedRequest;
 import com.datarain.pdp.message.dto.UserMessageResponse;
 import com.datarain.pdp.message.dto.UserMessageUpdateRequest;
 import com.datarain.pdp.message.service.UserMessageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -34,27 +36,32 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/api/user-messages")
 @PreAuthorize("hasAuthority('ROLE_USER')")
+@Tag(name = "User Messages", description = "User message CRUD, processing status, and timeline queries.")
 public class UserMessageController {
 
     private final UserMessageService userMessageService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create a new user message for analysis.")
     public UserMessageResponse create(@Valid @RequestBody UserMessageCreateRequest request) {
         return userMessageService.create(request);
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get a user message by id.")
     public UserMessageResponse getById(@PathVariable UUID id) {
         return userMessageService.getById(id);
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a user message by id.")
     public UserMessageResponse update(@PathVariable UUID id, @Valid @RequestBody UserMessageUpdateRequest request) {
         return userMessageService.update(id, request);
     }
 
     @PatchMapping("/{id}/processed")
+    @Operation(summary = "Set a user message processed status.")
     public UserMessageResponse setProcessed(@PathVariable UUID id,
                                             @Valid @RequestBody UserMessageProcessedRequest request) {
         return userMessageService.setProcessed(id, request);
@@ -62,11 +69,13 @@ public class UserMessageController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Delete a user message by id.")
     public void delete(@PathVariable UUID id) {
         userMessageService.delete(id);
     }
 
     @GetMapping
+    @Operation(summary = "List user messages with filters and pagination.")
     public Page<UserMessageResponse> getAll(
             @ParameterObject @PageableDefault(size = 20, sort = "messageDate") Pageable pageable,
             @RequestParam(required = false) Boolean processed,

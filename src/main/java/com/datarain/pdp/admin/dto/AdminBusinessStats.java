@@ -1,4 +1,4 @@
-package com.datarain.pdp.admin.model;
+package com.datarain.pdp.admin.dto;
 
 public record AdminBusinessStats(
         long totalUsers,

@@ -13,25 +13,6 @@ import java.util.UUID;
 public class SpringSecurityAuditorAware implements AuditorAware<UUID> {
 
 
-//    @Override
-//    public Optional<UUID> getCurrentAuditor() {
-//        Authentication authentication =
-//                SecurityContextHolder.getContext().getAuthentication();
-//
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            return Optional.empty();
-//        }
-//
-//        Object principal = authentication.getPrincipal();
-//
-//        if (principal instanceof UserDetails userDetails) {
-//            return Optional.of(
-//                    UUID.fromString(userDetails.getUsername())
-//            );
-//        }
-//
-//        return Optional.empty();
-//    }
 
     @Override
     public Optional<UUID> getCurrentAuditor() {

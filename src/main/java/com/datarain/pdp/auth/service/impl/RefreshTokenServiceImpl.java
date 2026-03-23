@@ -34,8 +34,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         rt.setToken(UUID.randomUUID().toString());
         rt.setExpiryDate(Instant.now().plus(7, ChronoUnit.DAYS));
         rt.setRevoked(false);
-        rt.setDevice(device);
-        rt.setIpAddress(ipAddress);
+        rt.setDevice(normalizeDevice(device));
+        rt.setIpAddress(normalizeIp(ipAddress));
 
         return refreshTokenRepository.save(rt);
     }
@@ -64,12 +64,26 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         RefreshToken fresh = new RefreshToken();
         fresh.setUser(old.getUser());
         fresh.setToken(UUID.randomUUID().toString());
-        fresh.setDevice(old.getDevice());
-        fresh.setIpAddress(old.getIpAddress());
+        fresh.setDevice(normalizeDevice(old.getDevice()));
+        fresh.setIpAddress(normalizeIp(old.getIpAddress()));
         fresh.setExpiryDate(Instant.now().plus(30, ChronoUnit.DAYS));
         fresh.setRevoked(false);
 
         return refreshTokenRepository.save(fresh);
+    }
+
+    private String normalizeDevice(String device) {
+        if (device == null || device.isBlank()) {
+            return "unknown";
+        }
+        return device;
+    }
+
+    private String normalizeIp(String ipAddress) {
+        if (ipAddress == null || ipAddress.isBlank()) {
+            return "0.0.0.0";
+        }
+        return ipAddress;
     }
 
     @Override

@@ -2,7 +2,7 @@ package com.datarain.pdp.admin.mapper;
 
 import com.datarain.pdp.admin.dto.BusinessStatsResponse;
 import com.datarain.pdp.admin.dto.JobExecutionLogResponse;
-import com.datarain.pdp.admin.model.AdminBusinessStats;
+import com.datarain.pdp.admin.dto.AdminBusinessStats;
 import com.datarain.pdp.infrastructure.job.monitoring.JobExecutionLog;
 
 public final class AdminMonitoringMapper {

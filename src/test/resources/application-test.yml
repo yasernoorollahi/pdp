@@ -1,12 +1,13 @@
 spring.flyway.enabled: true
 spring.flyway.locations: classpath:db/migration
+spring.flyway.clean-disabled: false
 
-spring.datasource.url: jdbc:postgresql://localhost:5432/pdp_upgrade_test
+spring.datasource.url: jdbc:postgresql://localhost:5432/pdp_test
 spring.datasource.username: pdp_test_user
 spring.datasource.password: pdp123
 
 spring.jpa.hibernate.ddl-auto: validate
 spring.jpa.show-sql: true
 
-jobs.ai-signal-engine.enabled: true
-jobs.signal-normalization.enabled: true
+jobs.ai-signal-engine.enabled: false
+jobs.signal-normalization.enabled: false

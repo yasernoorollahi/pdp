@@ -4,6 +4,8 @@ import com.datarain.pdp.signal.dto.AiSignalEngineRunRequest;
 import com.datarain.pdp.signal.dto.AiSignalEngineRunResponse;
 import com.datarain.pdp.signal.dto.MessageSignalResponse;
 import com.datarain.pdp.signal.service.AiSignalEngineService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -27,6 +29,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/ai-signal-engine")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@Tag(name = "AI / Signal Engine", description = "Admin controls and queries for AI signal processing.")
 public class AiSignalEngineAdminController {
 
     private final AiSignalEngineService aiSignalEngineService;
@@ -44,6 +47,7 @@ public class AiSignalEngineAdminController {
     private String defaultModel;
 
     @PostMapping("/run")
+    @Operation(summary = "Run the AI signal engine for pending messages.")
     public AiSignalEngineRunResponse run(@Valid @RequestBody(required = false) AiSignalEngineRunRequest request) {
         int batchSize = request != null && request.batchSize() != null ? request.batchSize() : defaultBatchSize;
         String provider = request != null && request.provider() != null ? request.provider() : defaultProvider;
@@ -54,6 +58,7 @@ public class AiSignalEngineAdminController {
     }
 
     @GetMapping("/signals")
+    @Operation(summary = "List extracted message signals with optional user filtering.")
     public Page<MessageSignalResponse> getSignals(
             @ParameterObject
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable,

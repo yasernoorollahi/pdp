@@ -6,7 +6,7 @@ import com.datarain.pdp.admin.dto.BusinessStatsResponse;
 import com.datarain.pdp.admin.dto.JobExecutionLogResponse;
 import com.datarain.pdp.admin.dto.SystemOverviewResponse;
 import com.datarain.pdp.admin.mapper.AdminMonitoringMapper;
-import com.datarain.pdp.admin.model.AdminBusinessStats;
+import com.datarain.pdp.admin.dto.AdminBusinessStats;
 import com.datarain.pdp.admin.repository.AdminMonitoringRepository;
 import com.datarain.pdp.admin.service.AdminMonitoringService;
 import com.datarain.pdp.admin.service.SystemOverviewService;

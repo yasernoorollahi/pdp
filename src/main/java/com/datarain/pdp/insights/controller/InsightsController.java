@@ -11,6 +11,8 @@ import com.datarain.pdp.insights.dto.MotivationTrendResponse;
 import com.datarain.pdp.insights.dto.TimelinePointResponse;
 import com.datarain.pdp.insights.dto.TrendPointResponse;
 import com.datarain.pdp.insights.service.InsightsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -29,11 +31,13 @@ import java.util.List;
 @RequestMapping("/api/insights")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
+@Tag(name = "Insights", description = "User insight timelines, trends, and summaries.")
 public class InsightsController {
 
     private final InsightsService insightsService;
 
     @GetMapping("/timeline")
+    @Operation(summary = "Get the user's insight timeline over a date range.")
     public List<TimelinePointResponse> getTimeline(
             @Valid @ParameterObject InsightRangeRequest request,
             @ParameterObject @PageableDefault(size = 60, sort = "metricDate") Pageable pageable
@@ -42,6 +46,7 @@ public class InsightsController {
     }
 
     @GetMapping("/energy")
+    @Operation(summary = "Get the user's energy trend over time.")
     public EnergyTrendResponse getEnergy(
             @Valid @ParameterObject InsightRangeRequest request,
             @ParameterObject @PageableDefault(size = 60, sort = "metricDate") Pageable pageable
@@ -50,6 +55,7 @@ public class InsightsController {
     }
 
     @GetMapping("/motivation")
+    @Operation(summary = "Get the user's motivation trend over time.")
     public MotivationTrendResponse getMotivation(
             @Valid @ParameterObject InsightRangeRequest request,
             @ParameterObject @PageableDefault(size = 60, sort = "metricDate") Pageable pageable
@@ -58,6 +64,7 @@ public class InsightsController {
     }
 
     @GetMapping("/friction")
+    @Operation(summary = "Get the user's friction heatmap over time.")
     public List<TrendPointResponse> getFriction(
             @Valid @ParameterObject InsightRangeRequest request,
             @ParameterObject @PageableDefault(size = 90, sort = "metricDate") Pageable pageable
@@ -66,6 +73,7 @@ public class InsightsController {
     }
 
     @GetMapping("/social")
+    @Operation(summary = "Get the user's social activity trend over time.")
     public CountTrendResponse getSocial(
             @Valid @ParameterObject InsightRangeRequest request,
             @ParameterObject @PageableDefault(size = 60, sort = "metricDate") Pageable pageable
@@ -74,6 +82,7 @@ public class InsightsController {
     }
 
     @GetMapping("/discipline")
+    @Operation(summary = "Get the user's discipline trend over time.")
     public CountTrendResponse getDiscipline(
             @Valid @ParameterObject InsightRangeRequest request,
             @ParameterObject @PageableDefault(size = 60, sort = "metricDate") Pageable pageable
@@ -82,6 +91,7 @@ public class InsightsController {
     }
 
     @GetMapping("/summary")
+    @Operation(summary = "Get an insight summary for the requested period.")
     public InsightSummaryResponse getSummary(
             @Valid @ParameterObject InsightRangeRequest request
     ) {
@@ -89,11 +99,13 @@ public class InsightsController {
     }
 
     @GetMapping("/today")
+    @Operation(summary = "Get today's snapshot of key insight metrics.")
     public InsightSnapshotResponse getToday() {
         return insightsService.getTodaySnapshot();
     }
 
     @GetMapping("/moods")
+    @Operation(summary = "Get a mood word cloud derived from recent messages.")
     public List<MoodWordResponse> getMoods(
             @Valid @ParameterObject InsightMoodRequest request,
             @ParameterObject @PageableDefault(size = 50) Pageable pageable

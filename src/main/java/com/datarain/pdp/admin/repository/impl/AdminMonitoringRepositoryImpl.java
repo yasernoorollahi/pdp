@@ -1,6 +1,6 @@
 package com.datarain.pdp.admin.repository.impl;
 
-import com.datarain.pdp.admin.model.AdminBusinessStats;
+import com.datarain.pdp.admin.dto.AdminBusinessStats;
 import com.datarain.pdp.admin.repository.AdminMonitoringRepository;
 import com.datarain.pdp.auth.repository.RefreshTokenRepository;
 import com.datarain.pdp.infrastructure.job.monitoring.JobExecutionLog;
