@@ -3,6 +3,8 @@ package com.datarain.pdp.signal.normalization.controller;
 import com.datarain.pdp.signal.normalization.dto.SignalNormalizationRunRequest;
 import com.datarain.pdp.signal.normalization.dto.SignalNormalizationRunResponse;
 import com.datarain.pdp.signal.normalization.service.SignalNormalizationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/signal-normalization")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@Tag(name = "AI / Normalization", description = "Admin controls for signal normalization pipeline.")
 public class SignalNormalizationAdminController {
 
     private final SignalNormalizationService signalNormalizationService;
@@ -26,6 +29,7 @@ public class SignalNormalizationAdminController {
     private int defaultBatchSize;
 
     @PostMapping("/run")
+    @Operation(summary = "Run signal normalization for pending messages.")
     public SignalNormalizationRunResponse run(@Valid @RequestBody(required = false) SignalNormalizationRunRequest request) {
         int batchSize = request != null && request.batchSize() != null
                 ? request.batchSize()
