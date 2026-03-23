@@ -71,7 +71,7 @@ class AuthFlowRestIT extends AbstractIT {
                 .when()
                 .post("/api/auth/logout")
                 .then()
-                .statusCode(200);
+                .statusCode(204);
 
         // 4. Call protected again → must fail
         given()
