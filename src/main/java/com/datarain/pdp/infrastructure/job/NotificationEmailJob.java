@@ -1,16 +1,12 @@
 package com.datarain.pdp.infrastructure.job;
 
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
-import com.datarain.pdp.notification.entity.NotificationEntity;
-import com.datarain.pdp.notification.entity.NotificationStatus;
-import com.datarain.pdp.notification.repository.NotificationRepository;
+import com.datarain.pdp.notification.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Component
@@ -21,12 +17,12 @@ import java.util.List;
 )
 public class NotificationEmailJob extends AbstractMonitoredJob {
 
-    private final NotificationRepository notificationRepository;
+    private final NotificationService notificationService;
 
-    public NotificationEmailJob(NotificationRepository notificationRepository,
+    public NotificationEmailJob(NotificationService notificationService,
                                 JobMonitoringService jobMonitoringService) {
         super(jobMonitoringService);
-        this.notificationRepository = notificationRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -34,13 +30,9 @@ public class NotificationEmailJob extends AbstractMonitoredJob {
     @Scheduled(cron = "0 0 * * * ?") // هر ساعت
     public void processPendingNotifications() {
         long processed = executeMonitored("NotificationEmailJob", () -> {
-            List<NotificationEntity> pending = notificationRepository
-                    .findTop100ByStatusOrderByCreatedAtAsc(NotificationStatus.PENDING);
-
-            pending.forEach(notification -> notification.setStatus(NotificationStatus.SENT));
-            notificationRepository.saveAll(pending);
-            log.info("NotificationEmailJob finished: {} notifications marked as SENT", pending.size());
-            return pending.size();
+            long updated = notificationService.markPendingAsSent();
+            log.info("NotificationEmailJob finished: {} notifications marked as SENT", updated);
+            return updated;
         });
         log.debug("NotificationEmailJob processed count: {}", processed);
     }

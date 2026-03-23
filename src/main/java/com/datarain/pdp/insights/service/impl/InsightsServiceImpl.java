@@ -17,9 +17,9 @@ import com.datarain.pdp.insights.dto.TimelinePointResponse;
 import com.datarain.pdp.insights.dto.TrendPointResponse;
 import com.datarain.pdp.insights.mapper.InsightsMapper;
 import com.datarain.pdp.insights.service.InsightsService;
-import com.datarain.pdp.signal.normalization.entity.DailyBehaviorMetric;
-import com.datarain.pdp.signal.normalization.repository.DailyBehaviorMetricRepository;
-import com.datarain.pdp.signal.normalization.repository.DailyBehaviorMetricSummaryProjection;
+import com.datarain.pdp.signal.service.SignalQueryService;
+import com.datarain.pdp.signal.service.model.DailyBehaviorMetricSummaryView;
+import com.datarain.pdp.signal.service.model.DailyBehaviorMetricView;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -49,7 +49,7 @@ public class InsightsServiceImpl implements InsightsService {
     private static final int DEFAULT_MOOD_DAYS = 30;
     private static final int DEFAULT_MOOD_LIMIT = 50;
 
-    private final DailyBehaviorMetricRepository dailyBehaviorMetricRepository;
+    private final SignalQueryService signalQueryService;
     private final BusinessEventService businessEventService;
     private final PdpMetrics metrics;
 
@@ -71,8 +71,7 @@ public class InsightsServiceImpl implements InsightsService {
         audit("timeline", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
-        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
-                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+        Page<DailyBehaviorMetricView> page = signalQueryService.findMetrics(userId, fromDate, pageable);
 
         return page.stream()
                 .map(InsightsMapper::toTimelinePoint)
@@ -97,14 +96,13 @@ public class InsightsServiceImpl implements InsightsService {
         audit("energy", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
-        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
-                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+        Page<DailyBehaviorMetricView> page = signalQueryService.findMetrics(userId, fromDate, pageable);
 
         List<TrendPointResponse> trend = page.stream()
-                .map(metric -> InsightsMapper.toTrendPoint(metric, metric.getEnergyScore()))
+                .map(metric -> InsightsMapper.toTrendPoint(metric, metric.energyScore()))
                 .toList();
 
-        Double average = summarize(userId, fromDate).getAvgEnergy();
+        Double average = summarize(userId, fromDate).avgEnergy();
         return new EnergyTrendResponse(average, trend);
     }
 
@@ -126,14 +124,13 @@ public class InsightsServiceImpl implements InsightsService {
         audit("motivation", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
-        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
-                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+        Page<DailyBehaviorMetricView> page = signalQueryService.findMetrics(userId, fromDate, pageable);
 
         List<TrendPointResponse> trend = page.stream()
-                .map(metric -> InsightsMapper.toTrendPoint(metric, metric.getMotivationScore()))
+                .map(metric -> InsightsMapper.toTrendPoint(metric, metric.motivationScore()))
                 .toList();
 
-        Double average = summarize(userId, fromDate).getAvgMotivation();
+        Double average = summarize(userId, fromDate).avgMotivation();
         return new MotivationTrendResponse(average, trend);
     }
 
@@ -155,11 +152,10 @@ public class InsightsServiceImpl implements InsightsService {
         audit("friction", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
-        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
-                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+        Page<DailyBehaviorMetricView> page = signalQueryService.findMetrics(userId, fromDate, pageable);
 
         return page.stream()
-                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.getFrictionCount())))
+                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.frictionCount())))
                 .toList();
     }
 
@@ -181,14 +177,13 @@ public class InsightsServiceImpl implements InsightsService {
         audit("social", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
-        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
-                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+        Page<DailyBehaviorMetricView> page = signalQueryService.findMetrics(userId, fromDate, pageable);
 
         List<TrendPointResponse> trend = page.stream()
-                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.getSocialMentionsCount())))
+                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.socialMentionsCount())))
                 .toList();
 
-        int total = summarize(userId, fromDate).getSocialSum().intValue();
+        int total = summarize(userId, fromDate).socialSum().intValue();
         return new CountTrendResponse(total, trend);
     }
 
@@ -210,14 +205,13 @@ public class InsightsServiceImpl implements InsightsService {
         audit("discipline", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
-        Page<DailyBehaviorMetric> page = dailyBehaviorMetricRepository
-                .findByUserIdAndMetricDateGreaterThanEqualOrderByMetricDateAsc(userId, fromDate, pageable);
+        Page<DailyBehaviorMetricView> page = signalQueryService.findMetrics(userId, fromDate, pageable);
 
         List<TrendPointResponse> trend = page.stream()
-                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.getDisciplineEventsCount())))
+                .map(metric -> InsightsMapper.toTrendPoint(metric, (double) safeInt(metric.disciplineEventsCount())))
                 .toList();
 
-        int total = summarize(userId, fromDate).getDisciplineSum().intValue();
+        int total = summarize(userId, fromDate).disciplineSum().intValue();
         return new CountTrendResponse(total, trend);
     }
 
@@ -239,13 +233,13 @@ public class InsightsServiceImpl implements InsightsService {
         audit("summary", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
-        DailyBehaviorMetricSummaryProjection summary = summarize(userId, fromDate);
+        DailyBehaviorMetricSummaryView summary = summarize(userId, fromDate);
 
-        String energyLevel = scoreToLevel(summary.getAvgEnergy(), "stable");
-        String motivationLevel = scoreToLevel(summary.getAvgMotivation(), "high");
-        String frictionLevel = countToLevel(summary.getFrictionSum(), "moderate", 1, 3);
-        String socialLevel = countToLevel(summary.getSocialSum(), "low", 1, 4);
-        String disciplineLevel = countToLevel(summary.getDisciplineSum(), "good", 2, 5);
+        String energyLevel = scoreToLevel(summary.avgEnergy(), "stable");
+        String motivationLevel = scoreToLevel(summary.avgMotivation(), "high");
+        String frictionLevel = countToLevel(summary.frictionSum(), "moderate", 1, 3);
+        String socialLevel = countToLevel(summary.socialSum(), "low", 1, 4);
+        String disciplineLevel = countToLevel(summary.disciplineSum(), "good", 2, 5);
 
         return new InsightSummaryResponse(energyLevel, motivationLevel, frictionLevel, socialLevel, disciplineLevel);
     }
@@ -265,13 +259,13 @@ public class InsightsServiceImpl implements InsightsService {
         metrics.incrementInsights("today");
         audit("today", userId, null);
 
-        return dailyBehaviorMetricRepository.findTopByUserIdOrderByMetricDateDesc(userId)
+        return signalQueryService.findLatestMetric(userId)
                 .map(metric -> new InsightSnapshotResponse(
-                        metric.getEnergyScore(),
-                        metric.getMotivationScore(),
-                        safeInt(metric.getFrictionCount()),
-                        safeInt(metric.getSocialMentionsCount()),
-                        safeInt(metric.getDisciplineEventsCount())
+                        metric.energyScore(),
+                        metric.motivationScore(),
+                        safeInt(metric.frictionCount()),
+                        safeInt(metric.socialMentionsCount()),
+                        safeInt(metric.disciplineEventsCount())
                 ))
                 .orElseGet(() -> new InsightSnapshotResponse(0.0, 0.0, 0, 0, 0));
     }
@@ -299,7 +293,7 @@ public class InsightsServiceImpl implements InsightsService {
         audit("moods", userId, days);
 
         LocalDate fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(days);
-        List<String> moods = dailyBehaviorMetricRepository.findMoodSummaries(userId, fromDate);
+        List<String> moods = signalQueryService.findMoodSummaries(userId, fromDate);
 
         Map<String, Integer> counts = new HashMap<>();
         for (String mood : moods) {
@@ -323,9 +317,8 @@ public class InsightsServiceImpl implements InsightsService {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    private DailyBehaviorMetricSummaryProjection summarize(UUID userId, LocalDate fromDate) {
-        DailyBehaviorMetricSummaryProjection summary = dailyBehaviorMetricRepository.summarize(userId, fromDate);
-        return summary != null ? summary : new EmptySummary();
+    private DailyBehaviorMetricSummaryView summarize(UUID userId, LocalDate fromDate) {
+        return signalQueryService.summarize(userId, fromDate);
     }
 
     private String scoreToLevel(Double score, String defaultLevel) {
@@ -369,30 +362,4 @@ public class InsightsServiceImpl implements InsightsService {
         businessEventService.log(BusinessEventType.INSIGHTS_VIEWED, email, userId, details, true);
     }
 
-    private static final class EmptySummary implements DailyBehaviorMetricSummaryProjection {
-        @Override
-        public Double getAvgEnergy() {
-            return null;
-        }
-
-        @Override
-        public Double getAvgMotivation() {
-            return null;
-        }
-
-        @Override
-        public Long getFrictionSum() {
-            return 0L;
-        }
-
-        @Override
-        public Long getSocialSum() {
-            return 0L;
-        }
-
-        @Override
-        public Long getDisciplineSum() {
-            return 0L;
-        }
-    }
 }

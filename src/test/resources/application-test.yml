@@ -1,7 +1,7 @@
 spring.flyway.enabled: true
 spring.flyway.locations: classpath:db/migration
 
-spring.datasource.url: jdbc:postgresql://localhost:5432/pdp_upgrade_test
+spring.datasource.url: jdbc:postgresql://localhost:5432/pdp_test
 spring.datasource.username: pdp_test_user
 spring.datasource.password: pdp123
 
