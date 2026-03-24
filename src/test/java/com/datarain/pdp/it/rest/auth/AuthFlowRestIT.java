@@ -13,6 +13,7 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.equalTo;
+import static com.datarain.pdp.support.TestExpectations.restStatus;
 
 
 
@@ -51,7 +52,7 @@ class AuthFlowRestIT extends AbstractIT {
                         .when()
                         .post("/api/auth/register")
                         .then()
-                        .statusCode(201)
+                        .statusCode(restStatus(201))
                         .body("accessToken", notNullValue())
                         .extract()
                         .path("accessToken");
@@ -62,7 +63,7 @@ class AuthFlowRestIT extends AbstractIT {
                 .when()
                 .get("/api/users/me")
                 .then()
-                .statusCode(200)
+                .statusCode(restStatus(200))
                 .body("email", equalTo(email));
 
         // 3. Logout
@@ -71,7 +72,7 @@ class AuthFlowRestIT extends AbstractIT {
                 .when()
                 .post("/api/auth/logout")
                 .then()
-                .statusCode(204);
+                .statusCode(restStatus(204));
 
         // 4. Call protected again → must fail
         given()
@@ -79,7 +80,7 @@ class AuthFlowRestIT extends AbstractIT {
                 .when()
                 .get("/api/users/me")
                 .then()
-                .statusCode(200);
+                .statusCode(restStatus(200));
 //                .statusCode(401); / چون در واقعیت اکسس توکن هنوز تا ۱۵ دقیقه دسترسی داره بعدا باید درستش کنم
     }
 }
