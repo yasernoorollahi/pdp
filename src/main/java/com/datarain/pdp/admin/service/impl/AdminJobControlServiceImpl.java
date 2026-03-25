@@ -73,6 +73,7 @@ public class AdminJobControlServiceImpl implements AdminJobControlService {
         UUID userId = SecurityUtils.currentUserId();
         String email = SecurityUtils.currentUsername();
         String traceId = MDC.get(TraceIdFilter.TRACE_ID);
+        Instant updateTime = resolveMonotonicUpdateTime();
 
         log.atInfo()
                 .addKeyValue("event", "admin.job_control.updated")
@@ -81,7 +82,7 @@ public class AdminJobControlServiceImpl implements AdminJobControlService {
                 .log("Admin job control update requested");
 
         if (request.globalEnabled() != null) {
-            upsert(JobControlResolver.GLOBAL_KEY, request.globalEnabled(), userId);
+            upsert(JobControlResolver.GLOBAL_KEY, request.globalEnabled(), userId, updateTime);
         }
 
         List<JobToggleRequest> jobs = request.jobs();
@@ -91,7 +92,7 @@ public class AdminJobControlServiceImpl implements AdminJobControlService {
                 if (job == null) {
                     throw new InvalidJobKeyException(toggle.jobKey());
                 }
-                upsert(job.getKey(), toggle.enabled(), userId);
+                upsert(job.getKey(), toggle.enabled(), userId, updateTime);
             }
         }
 
@@ -141,13 +142,22 @@ public class AdminJobControlServiceImpl implements AdminJobControlService {
         );
     }
 
-    private void upsert(String key, boolean enabled, UUID userId) {
+    private void upsert(String key, boolean enabled, UUID userId, Instant updateTime) {
         JobControlSetting setting = repository.findById(key).orElseGet(JobControlSetting::new);
         setting.setJobKey(key);
         setting.setEnabledOverride(enabled);
-        setting.setUpdatedAt(Instant.now());
+        setting.setUpdatedAt(updateTime);
         setting.setUpdatedBy(userId);
         repository.save(setting);
+    }
+
+    private Instant resolveMonotonicUpdateTime() {
+        Instant now = Instant.now();
+        return repository.findTopByOrderByUpdatedAtDesc()
+                .map(JobControlSetting::getUpdatedAt)
+                .filter(latest -> latest.isAfter(now))
+                .map(latest -> latest.plusMillis(1))
+                .orElse(now);
     }
 
     private String summarizeUpdate(JobControlUpdateRequest request) {
