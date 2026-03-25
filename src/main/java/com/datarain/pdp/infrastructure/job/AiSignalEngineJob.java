@@ -1,6 +1,8 @@
 package com.datarain.pdp.infrastructure.job;
 
 import com.datarain.pdp.infrastructure.external.ai.AiExtractionProperties;
+import com.datarain.pdp.infrastructure.job.control.JobControlResolver;
+import com.datarain.pdp.infrastructure.job.control.ManagedJob;
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import com.datarain.pdp.signal.service.AiSignalEngineService;
 import lombok.extern.slf4j.Slf4j;
@@ -24,23 +26,30 @@ public class AiSignalEngineJob extends AbstractMonitoredJob {
     private final AiExtractionProperties aiExtractionProperties;
     private final int batchSize;
     private final int maxRetries;
+    private final JobControlResolver jobControlResolver;
 
     public AiSignalEngineJob(AiSignalEngineService aiSignalEngineService,
                              AiExtractionProperties aiExtractionProperties,
                              JobMonitoringService jobMonitoringService,
                              @Value("${jobs.ai-signal-engine.batch-size:20}") int batchSize,
-                             @Value("${jobs.ai-signal-engine.max-retries:3}") int maxRetries) {
+                             @Value("${jobs.ai-signal-engine.max-retries:3}") int maxRetries,
+                             JobControlResolver jobControlResolver) {
         super(jobMonitoringService);
         this.aiSignalEngineService = aiSignalEngineService;
         this.aiExtractionProperties = aiExtractionProperties;
         this.batchSize = batchSize;
         this.maxRetries = maxRetries;
+        this.jobControlResolver = jobControlResolver;
     }
 
     @Transactional
     @Scheduled(cron = "${jobs.ai-signal-engine.cron:0 */3 * * * ?}")
     @SchedulerLock(name = "AiSignalEngineJob", lockAtMostFor = "PT5M")
     public void run() {
+        if (!jobControlResolver.isJobEnabled(ManagedJob.AI_SIGNAL_ENGINE)) {
+            log.info("AiSignalEngineJob skipped (disabled by admin control).");
+            return;
+        }
         long processed = executeMonitored("AiSignalEngineJob", () -> {
             String provider = aiExtractionProperties.getDefaultProvider();
             String model = aiExtractionProperties.getDefaultModel();

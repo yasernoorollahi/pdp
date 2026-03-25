@@ -1,15 +1,9 @@
 package com.datarain.pdp.exception.handler;
 
 import com.datarain.pdp.exception.base.BaseBusinessException;
-import com.datarain.pdp.exception.dto.ApiErrorResponse;
-import com.datarain.pdp.exception.errors.ErrorCode;
 import com.datarain.pdp.exception.errors.ErrorResponse;
-import com.datarain.pdp.exception.errors.FieldValidationError;
-import com.datarain.pdp.exception.errors.ValidationErrorResponse;
-import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,55 +16,68 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final ErrorResponseFactory errorResponseFactory;
+
+    public GlobalExceptionHandler(ErrorResponseFactory errorResponseFactory) {
+        this.errorResponseFactory = errorResponseFactory;
+    }
 
     @ExceptionHandler(BaseBusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(
             BaseBusinessException ex,
             HttpServletRequest request
     ) {
-        ErrorResponse response = buildErrorResponse(
+        ErrorResponse response = errorResponseFactory.build(
                 ex.getStatus(),
-                ex.getErrorCode().name(),
                 ex.getMessage(),
-                request.getRequestURI()
+                request
         );
         return new ResponseEntity<>(response, ex.getStatus());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationErrorResponse> handleValidationException(
-            MethodArgumentNotValidException ex
+    public ResponseEntity<ErrorResponse> handleValidationException(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
     ) {
-        List<FieldValidationError> fieldErrors = ex.getBindingResult()
+        String message = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> new FieldValidationError(error.getField(), error.getDefaultMessage()))
-                .toList();
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
 
-        return ResponseEntity.badRequest().body(
-                new ValidationErrorResponse(ErrorCode.VALIDATION_ERROR.name(), fieldErrors)
+        ErrorResponse response = errorResponseFactory.build(
+                HttpStatus.BAD_REQUEST,
+                message.isBlank() ? "Validation failed" : message,
+                request
         );
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
-    public ResponseEntity<ValidationErrorResponse> handleConstraintViolation(
-            jakarta.validation.ConstraintViolationException ex
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException ex,
+            HttpServletRequest request
     ) {
-        List<FieldValidationError> fieldErrors = ex.getConstraintViolations()
+        String message = ex.getConstraintViolations()
                 .stream()
-                .map(v -> new FieldValidationError(v.getPropertyPath().toString(), v.getMessage()))
-                .toList();
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .collect(Collectors.joining(", "));
 
-        return ResponseEntity.badRequest().body(
-                new ValidationErrorResponse(ErrorCode.VALIDATION_ERROR.name(), fieldErrors)
+        ErrorResponse response = errorResponseFactory.build(
+                HttpStatus.BAD_REQUEST,
+                message.isBlank() ? "Validation failed" : message,
+                request
         );
+        return ResponseEntity.badRequest().body(response);
     }
 
     // اضافه شد: handler برای خطای دسترسی (403 Forbidden)
@@ -81,8 +88,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Access denied for request: {}", request.getRequestURI());
         return new ResponseEntity<>(
-                buildErrorResponse(HttpStatus.FORBIDDEN, ErrorCode.FORBIDDEN.name(),
-                        "Access denied", request.getRequestURI()),
+                errorResponseFactory.build(HttpStatus.FORBIDDEN, "Access denied", request),
                 HttpStatus.FORBIDDEN
         );
     }
@@ -94,8 +100,7 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return new ResponseEntity<>(
-                buildErrorResponse(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED.name(),
-                        "Authentication required", request.getRequestURI()),
+                errorResponseFactory.build(HttpStatus.UNAUTHORIZED, "Authentication required", request),
                 HttpStatus.UNAUTHORIZED
         );
     }
@@ -108,8 +113,7 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Data integrity violation: {}", ex.getMessage());
         return new ResponseEntity<>(
-                buildErrorResponse(HttpStatus.CONFLICT, ErrorCode.DATA_INTEGRITY_VIOLATION.name(),
-                        "Data integrity violation", request.getRequestURI()),
+                errorResponseFactory.build(HttpStatus.CONFLICT, "Data integrity violation", request),
                 HttpStatus.CONFLICT
         );
     }
@@ -121,28 +125,31 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return new ResponseEntity<>(
-                buildErrorResponse(HttpStatus.METHOD_NOT_ALLOWED, ErrorCode.METHOD_NOT_ALLOWED.name(),
-                        "Method not allowed: " + ex.getMethod(), request.getRequestURI()),
+                errorResponseFactory.build(
+                        HttpStatus.METHOD_NOT_ALLOWED,
+                        "Method not allowed: " + ex.getMethod(),
+                        request
+                ),
                 HttpStatus.METHOD_NOT_ALLOWED
         );
     }
 
     // اضافه شد: handler برای type mismatch در path variables (مثلاً UUID اشتباه)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ValidationErrorResponse> handleTypeMismatch(
-            MethodArgumentTypeMismatchException ex
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request
     ) {
-        FieldValidationError error = new FieldValidationError(
-                ex.getName(),
-                "Invalid value: " + ex.getValue()
-        );
-        return ResponseEntity.badRequest().body(
-                new ValidationErrorResponse(ErrorCode.VALIDATION_ERROR.name(), List.of(error))
-        );
+        String message = ex.getName() + ": Invalid value: " + ex.getValue();
+        ErrorResponse response = errorResponseFactory.build(HttpStatus.BAD_REQUEST, message, request);
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<?> handleInvalidEnum(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ErrorResponse> handleInvalidEnum(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request
+    ) {
         Throwable cause = ex.getCause();
 
         if (cause instanceof com.fasterxml.jackson.databind.exc.InvalidFormatException ife) {
@@ -154,16 +161,21 @@ public class GlobalExceptionHandler {
                         .map(Object::toString)
                         .toList();
 
-                return ResponseEntity.badRequest().body(
-                        new ValidationErrorResponse(ErrorCode.VALIDATION_ERROR.name(),
-                                List.of(new FieldValidationError(fieldName, "must be one of " + allowedValues)))
+                ErrorResponse response = errorResponseFactory.build(
+                        HttpStatus.BAD_REQUEST,
+                        fieldName + ": must be one of " + allowedValues,
+                        request
                 );
+                return ResponseEntity.badRequest().body(response);
             }
         }
 
-        return ResponseEntity.badRequest().body(
-                new ApiErrorResponse(ErrorCode.INVALID_REQUEST.name(), "Malformed JSON request")
+        ErrorResponse response = errorResponseFactory.build(
+                HttpStatus.BAD_REQUEST,
+                "Malformed JSON request",
+                request
         );
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(Exception.class)
@@ -173,14 +185,8 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Unexpected error on request {}: {}", request.getRequestURI(), ex.getMessage(), ex);
         return new ResponseEntity<>(
-                buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_ERROR.name(),
-                        "Unexpected error occurred", request.getRequestURI()),
+                errorResponseFactory.build(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error occurred", request),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
-    }
-
-    private ErrorResponse buildErrorResponse(HttpStatus status, String code, String message, String path) {
-        String traceId = MDC.get(TraceIdFilter.TRACE_ID);
-        return new ErrorResponse(Instant.now(), status.value(), status.name(), code, message, path, traceId);
     }
 }

@@ -30,6 +30,10 @@ public class RateLimitPolicyProvider {
             return new RateLimitConfig(50, Duration.ofMinutes(1));
         }
 
+        if (path.startsWith("/api/admin/jobs")) {
+            return new RateLimitConfig(200, Duration.ofMinutes(1));
+        }
+
         return new RateLimitConfig(100, Duration.ofMinutes(1));
     }
 }

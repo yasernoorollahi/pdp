@@ -70,8 +70,9 @@ management.health.diskspace.threshold: 100MB
 
 ### ===================== OpenTelemetry =====================
 otel.service.name: pdp
-otel.exporter.otlp.endpoint: http://localhost:4317
-otel.traces.exporter: otlp
+otel.exporter.otlp.endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+#otel.traces.exporter: otlp // I disabled oltp for dev but it should be enabled on prod
+otel.traces.exporter: none
 otel.metrics.exporter: none
 otel.logs.exporter: none
 
@@ -97,5 +98,7 @@ spring.task.execution.pool.queue-capacity: 500
 spring.task.execution.thread-name-prefix: pdp-async-
 
 ### ===================== Logging =====================
+# Enable/disable all logging (true/false)
+logging.enabled: false
 # Log only slow Hibernate queries (e.g. execution time > 30ms)
 spring.jpa.properties.hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS: 30

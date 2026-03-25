@@ -2,6 +2,8 @@ package com.datarain.pdp.infrastructure.job;
 
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
+import com.datarain.pdp.infrastructure.job.control.JobControlResolver;
+import com.datarain.pdp.infrastructure.job.control.ManagedJob;
 import com.datarain.pdp.signal.normalization.service.SignalNormalizationService;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -23,19 +25,26 @@ public class SignalNormalizationJob extends AbstractMonitoredJob {
 
     private final SignalNormalizationService signalNormalizationService;
     private final int batchSize;
+    private final JobControlResolver jobControlResolver;
 
     public SignalNormalizationJob(SignalNormalizationService signalNormalizationService,
                                   JobMonitoringService jobMonitoringService,
-                                  @Value("${jobs.signal-normalization.batch-size:100}") int batchSize) {
+                                  @Value("${jobs.signal-normalization.batch-size:100}") int batchSize,
+                                  JobControlResolver jobControlResolver) {
         super(jobMonitoringService);
         this.signalNormalizationService = signalNormalizationService;
         this.batchSize = batchSize;
+        this.jobControlResolver = jobControlResolver;
     }
 
     @Transactional
     @Scheduled(fixedDelayString = "${jobs.signal-normalization.delay-ms:5000}")
     @SchedulerLock(name = "SignalNormalizationJob", lockAtMostFor = "PT5M")
     public void run() {
+        if (!jobControlResolver.isJobEnabled(ManagedJob.SIGNAL_NORMALIZATION)) {
+            log.info("SignalNormalizationJob skipped (disabled by admin control).");
+            return;
+        }
         long processed = executeMonitored("SignalNormalizationJob", () -> {
             String traceId = MDC.get(TraceIdFilter.TRACE_ID);
             log.atInfo()

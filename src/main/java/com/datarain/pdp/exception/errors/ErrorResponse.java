@@ -1,16 +1,17 @@
 package com.datarain.pdp.exception.errors;
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.time.Instant;
 
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
 
 
     private Instant timestamp;
     private int status;
-    private String error; // NOT_FOUND, BAD_REQUEST, ...
-    private String code; // ITEM_NOT_FOUND, VALIDATION_ERROR, ...
+    private String error; // UNAUTHORIZED, FORBIDDEN, BAD_REQUEST, ...
     private String message;
     private String path;
     private String traceId; // برای آینده (ELK / Zipkin)
@@ -20,11 +21,10 @@ public class ErrorResponse {
 
 
     public ErrorResponse(Instant timestamp, int status, String error,
-                         String code, String message, String path, String traceId) {
+                         String message, String path, String traceId) {
         this.timestamp = timestamp;
         this.status = status;
         this.error = error;
-        this.code = code;
         this.message = message;
         this.path = path;
         this.traceId = traceId;
@@ -44,10 +44,6 @@ public class ErrorResponse {
 
     public String getError() { return error; }
     public void setError(String error) { this.error = error; }
-
-
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
 
 
     public String getMessage() { return message; }

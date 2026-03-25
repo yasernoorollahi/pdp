@@ -1,6 +1,8 @@
 package com.datarain.pdp.infrastructure.job;
 
 import com.datarain.pdp.infrastructure.external.ai.AiExtractionProperties;
+import com.datarain.pdp.infrastructure.job.control.JobControlResolver;
+import com.datarain.pdp.infrastructure.job.control.ManagedJob;
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import com.datarain.pdp.message.service.UserMessageService;
 import lombok.extern.slf4j.Slf4j;
@@ -23,21 +25,28 @@ public class UserMessageAnalysisJob extends AbstractMonitoredJob {
     private final UserMessageService userMessageService;
     private final AiExtractionProperties aiExtractionProperties;
     private final int batchSize;
+    private final JobControlResolver jobControlResolver;
 
     public UserMessageAnalysisJob(UserMessageService userMessageService,
                                   AiExtractionProperties aiExtractionProperties,
                                   JobMonitoringService jobMonitoringService,
-                                  @Value("${jobs.user-message-analysis.batch-size:50}") int batchSize) {
+                                  @Value("${jobs.user-message-analysis.batch-size:50}") int batchSize,
+                                  JobControlResolver jobControlResolver) {
         super(jobMonitoringService);
         this.userMessageService = userMessageService;
         this.aiExtractionProperties = aiExtractionProperties;
         this.batchSize = batchSize;
+        this.jobControlResolver = jobControlResolver;
     }
 
     @Transactional
     @Scheduled(cron = "${jobs.user-message-analysis.cron:0 */2 * * * ?}")
     @SchedulerLock(name = "UserMessageAnalysisJob", lockAtMostFor = "PT5M")
     public void analyzePendingMessages() {
+        if (!jobControlResolver.isJobEnabled(ManagedJob.USER_MESSAGE_ANALYSIS)) {
+            log.info("UserMessageAnalysisJob skipped (disabled by admin control).");
+            return;
+        }
         long processed = executeMonitored("UserMessageAnalysisJob", () -> {
             String provider = aiExtractionProperties.getDefaultProvider();
             String model = aiExtractionProperties.getDefaultModel();
