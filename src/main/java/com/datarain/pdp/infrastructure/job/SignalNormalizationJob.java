@@ -4,6 +4,7 @@ import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
 import com.datarain.pdp.signal.normalization.service.SignalNormalizationService;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -33,6 +34,7 @@ public class SignalNormalizationJob extends AbstractMonitoredJob {
 
     @Transactional
     @Scheduled(fixedDelayString = "${jobs.signal-normalization.delay-ms:5000}")
+    @SchedulerLock(name = "SignalNormalizationJob", lockAtMostFor = "PT5M")
     public void run() {
         long processed = executeMonitored("SignalNormalizationJob", () -> {
             String traceId = MDC.get(TraceIdFilter.TRACE_ID);

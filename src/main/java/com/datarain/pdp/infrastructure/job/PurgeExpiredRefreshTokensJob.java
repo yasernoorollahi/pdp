@@ -3,6 +3,7 @@ package com.datarain.pdp.infrastructure.job;
 import com.datarain.pdp.auth.repository.RefreshTokenRepository;
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -29,6 +30,7 @@ public class PurgeExpiredRefreshTokensJob extends AbstractMonitoredJob {
 
     @Transactional
     @Scheduled(cron = "0 */1 * * * ?") //every 1 min
+    @SchedulerLock(name = "PurgeExpiredRefreshTokensJob", lockAtMostFor = "PT5M")
 //    @Scheduled(cron = "0 0 * * * ?") // هر ساعت
     public void purge() {
         long count = executeMonitored("PurgeExpiredRefreshTokensJob", () -> {
