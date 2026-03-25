@@ -4,6 +4,7 @@ import com.datarain.pdp.infrastructure.external.ai.AiExtractionProperties;
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import com.datarain.pdp.signal.service.AiSignalEngineService;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,6 +39,7 @@ public class AiSignalEngineJob extends AbstractMonitoredJob {
 
     @Transactional
     @Scheduled(cron = "${jobs.ai-signal-engine.cron:0 */3 * * * ?}")
+    @SchedulerLock(name = "AiSignalEngineJob", lockAtMostFor = "PT5M")
     public void run() {
         long processed = executeMonitored("AiSignalEngineJob", () -> {
             String provider = aiExtractionProperties.getDefaultProvider();

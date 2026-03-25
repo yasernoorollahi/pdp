@@ -4,6 +4,7 @@ import com.datarain.pdp.infrastructure.external.ai.AiExtractionProperties;
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import com.datarain.pdp.message.service.UserMessageService;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -35,6 +36,7 @@ public class UserMessageAnalysisJob extends AbstractMonitoredJob {
 
     @Transactional
     @Scheduled(cron = "${jobs.user-message-analysis.cron:0 */2 * * * ?}")
+    @SchedulerLock(name = "UserMessageAnalysisJob", lockAtMostFor = "PT5M")
     public void analyzePendingMessages() {
         long processed = executeMonitored("UserMessageAnalysisJob", () -> {
             String provider = aiExtractionProperties.getDefaultProvider();

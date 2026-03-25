@@ -3,6 +3,7 @@ package com.datarain.pdp.infrastructure.job;
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import com.datarain.pdp.notification.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,7 @@ public class NotificationEmailJob extends AbstractMonitoredJob {
     @Transactional
 //    @Scheduled(cron = "0 */5 * * * ?")
     @Scheduled(cron = "0 0 * * * ?") // هر ساعت
+    @SchedulerLock(name = "NotificationEmailJob", lockAtMostFor = "PT30M")
     public void processPendingNotifications() {
         long processed = executeMonitored("NotificationEmailJob", () -> {
             long updated = notificationService.markPendingAsSent();
