@@ -2,7 +2,9 @@ package com.datarain.pdp.infrastructure.security;
 
 import com.datarain.pdp.infrastructure.rate_limit.filter.RateLimitFilter;
 import com.datarain.pdp.infrastructure.security.jwt.JwtAuthenticationFilter;
-import jakarta.servlet.http.HttpServletResponse;
+import com.datarain.pdp.infrastructure.security.web.RestAccessDeniedHandler;
+import com.datarain.pdp.infrastructure.security.web.RestAuthenticationEntryPoint;
+import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,11 +20,20 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
+    private final RestAccessDeniedHandler accessDeniedHandler;
+    private final TraceIdFilter traceIdFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          RateLimitFilter rateLimitFilter) {
+                          RateLimitFilter rateLimitFilter,
+                          RestAuthenticationEntryPoint authenticationEntryPoint,
+                          RestAccessDeniedHandler accessDeniedHandler,
+                          TraceIdFilter traceIdFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.rateLimitFilter = rateLimitFilter;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
+        this.traceIdFilter = traceIdFilter;
     }
 
 
@@ -42,9 +53,8 @@ public class SecurityConfig {
 
                 // 👇 این بخش کلیدی
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED)
-                        )
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
 
                 // مجوز دسترسی
@@ -71,6 +81,7 @@ public class SecurityConfig {
                 )
 
                 // فیلترها
+                .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

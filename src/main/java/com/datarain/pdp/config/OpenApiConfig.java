@@ -20,7 +20,8 @@ import org.springframework.context.annotation.Configuration;
                 @Tag(name = "AI / Signal Engine", description = "Admin controls and queries for AI signal processing."),
                 @Tag(name = "AI / Normalization", description = "Admin controls for signal normalization pipeline."),
                 @Tag(name = "Admin / Monitoring", description = "Admin system monitoring and operational overview."),
-                @Tag(name = "Admin / Audit", description = "Admin access to security and business audit logs.")
+                @Tag(name = "Admin / Audit", description = "Admin access to security and business audit logs."),
+                @Tag(name = "Admin / Jobs", description = "Admin job control and runtime toggles.")
         }
 )
 public class OpenApiConfig {

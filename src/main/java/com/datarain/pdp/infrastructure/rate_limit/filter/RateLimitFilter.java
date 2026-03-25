@@ -1,6 +1,7 @@
 package com.datarain.pdp.infrastructure.rate_limit.filter;
 
 import com.datarain.pdp.exception.business.RateLimitExceededException;
+import com.datarain.pdp.exception.handler.ErrorResponseWriter;
 import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
 import com.datarain.pdp.infrastructure.rate_limit.config.RateLimitConfig;
 import com.datarain.pdp.infrastructure.rate_limit.config.RateLimitPolicyProvider;
@@ -11,7 +12,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -26,16 +26,19 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final RateLimitService rateLimitService;
     private final RateLimitPolicyProvider policyProvider;
     private final PdpMetrics metrics;
+    private final ErrorResponseWriter errorResponseWriter;
 
 
     public RateLimitFilter(
             RateLimitService rateLimitService,
             RateLimitPolicyProvider policyProvider,
-            PdpMetrics metrics
+            PdpMetrics metrics,
+            ErrorResponseWriter errorResponseWriter
     ) {
         this.rateLimitService = rateLimitService;
         this.policyProvider = policyProvider;
         this.metrics = metrics;
+        this.errorResponseWriter = errorResponseWriter;
     }
 
 
@@ -67,16 +70,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             );
             metrics.getRateLimitHitCounter().increment();
 
-            // response تمیز
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-
-            response.getWriter().write("""
-            {
-              "error": "RATE_LIMIT_EXCEEDED",
-              "message": "Too many requests"
-            }
-        """);
+            errorResponseWriter.write(
+                    response,
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many requests",
+                    request.getRequestURI()
+            );
         }
     }
 

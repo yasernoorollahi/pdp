@@ -6,6 +6,8 @@ import com.datarain.pdp.infrastructure.job.monitoring.JobExecutionLog;
 import com.datarain.pdp.infrastructure.job.monitoring.JobExecutionLogRepository;
 import com.datarain.pdp.infrastructure.job.monitoring.JobExecutionStatus;
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
+import com.datarain.pdp.infrastructure.job.control.JobControlResolver;
+import com.datarain.pdp.infrastructure.job.control.ManagedJob;
 import com.datarain.pdp.infrastructure.security.Role;
 import com.datarain.pdp.infrastructure.security.audit.SecurityAuditLog;
 import com.datarain.pdp.infrastructure.security.audit.SecurityAuditLogRepository;
@@ -46,6 +48,7 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
     private final JobExecutionLogRepository jobExecutionLogRepository;
     private final PasswordEncoder passwordEncoder;
     private final DailyBehaviorMetricsSeedService dailyBehaviorMetricsSeedService;
+    private final JobControlResolver jobControlResolver;
 
     private final int usersCount;
     private final int refreshTokensPerUser;
@@ -67,7 +70,8 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
                               @Value("${jobs.test-data.force:false}") boolean forceSeed,
                               @Value("${jobs.test-data.daily-behavior.enabled:true}") boolean dailyBehaviorEnabled,
                               @Value("${jobs.test-data.daily-behavior.user-email:}") String dailyBehaviorUserEmail,
-                              @Value("${jobs.test-data.daily-behavior.days:30}") int dailyBehaviorDays) {
+                              @Value("${jobs.test-data.daily-behavior.days:30}") int dailyBehaviorDays,
+                              JobControlResolver jobControlResolver) {
         super(jobMonitoringService);
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -82,10 +86,15 @@ public class TestDataSeedingJob extends AbstractMonitoredJob implements Applicat
         this.dailyBehaviorEnabled = dailyBehaviorEnabled;
         this.dailyBehaviorUserEmail = dailyBehaviorUserEmail;
         this.dailyBehaviorDays = dailyBehaviorDays;
+        this.jobControlResolver = jobControlResolver;
     }
 
     @Override
     public void run(ApplicationArguments args) {
+        if (!jobControlResolver.isJobEnabled(ManagedJob.TEST_DATA_SEEDING)) {
+            log.info("TestDataSeedingJob skipped (disabled by admin control).");
+            return;
+        }
         long processed = executeMonitored("TestDataSeedingJob", this::seedAll);
         log.info("TestDataSeedingJob finished. inserted_records={}", processed);
     }

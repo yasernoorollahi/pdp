@@ -1,6 +1,8 @@
 package com.datarain.pdp.infrastructure.job;
 
 import com.datarain.pdp.auth.repository.RefreshTokenRepository;
+import com.datarain.pdp.infrastructure.job.control.JobControlResolver;
+import com.datarain.pdp.infrastructure.job.control.ManagedJob;
 import com.datarain.pdp.infrastructure.job.monitoring.JobMonitoringService;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -21,10 +23,14 @@ import java.time.Instant;
 public class PurgeExpiredRefreshTokensJob extends AbstractMonitoredJob {
 
     private final RefreshTokenRepository repository;
+    private final JobControlResolver jobControlResolver;
 
-    public PurgeExpiredRefreshTokensJob(RefreshTokenRepository repository, JobMonitoringService jobMonitoringService) {
+    public PurgeExpiredRefreshTokensJob(RefreshTokenRepository repository,
+                                        JobMonitoringService jobMonitoringService,
+                                        JobControlResolver jobControlResolver) {
         super(jobMonitoringService);
         this.repository = repository;
+        this.jobControlResolver = jobControlResolver;
     }
 
 
@@ -33,6 +39,10 @@ public class PurgeExpiredRefreshTokensJob extends AbstractMonitoredJob {
     @SchedulerLock(name = "PurgeExpiredRefreshTokensJob", lockAtMostFor = "PT5M")
 //    @Scheduled(cron = "0 0 * * * ?") // هر ساعت
     public void purge() {
+        if (!jobControlResolver.isJobEnabled(ManagedJob.PURGE_EXPIRED_REFRESH_TOKENS)) {
+            log.info("PurgeExpiredRefreshTokensJob skipped (disabled by admin control).");
+            return;
+        }
         long count = executeMonitored("PurgeExpiredRefreshTokensJob", () -> {
             log.info("PurgeExpiredRefreshTokensJob started");
             long removed = repository.deleteByExpiryDateBefore(Instant.now());

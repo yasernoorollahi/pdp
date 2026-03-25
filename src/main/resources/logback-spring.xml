@@ -2,125 +2,178 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <property name="LOG_PATH" value="logs"/>
+    <springProperty scope="context" name="LOGGING_ENABLED" source="logging.enabled" defaultValue="true"/>
 
-    <!-- ================= GENERAL APPLICATION LOG ================= -->
-    <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/app.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/app.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>14</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger{36} - %msg%n</pattern>
+    <!-- ===================== DEV PROFILE ===================== -->
+    <springProfile name="dev">
+        <if condition='property("LOGGING_ENABLED").equals("false")'>
+            <then>
+                <appender name="CONSOLE_BASE" class="ch.qos.logback.core.ConsoleAppender">
+                    <encoder>
+                        <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} [%X{traceId}] %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n</pattern>
+                    </encoder>
+                </appender>
 
-        </encoder>
-    </appender>
+                <logger name="org.springframework" level="INFO" additivity="false">
+                    <appender-ref ref="CONSOLE_BASE"/>
+                </logger>
+                <logger name="org.springframework.boot" level="INFO" additivity="false">
+                    <appender-ref ref="CONSOLE_BASE"/>
+                </logger>
 
-    <!-- ================= ERROR LOG ================= -->
-    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/error.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>ERROR</level>
-        </filter>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger{36} - %msg%n</pattern>
+                <root level="OFF"/>
+            </then>
+            <else>
+        <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/app.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>14</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
 
-        </encoder>
-    </appender>
+        <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/error.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>ERROR</level>
+            </filter>
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
 
-    <!-- ================= SQL LOG ================= -->
-    <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/sql.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/sql.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>7</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%X{traceId}] %-5level %msg%n</pattern>
+        <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/sql.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/sql.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>7</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} [%X{traceId}] %-5level %msg%n</pattern>
+            </encoder>
+        </appender>
 
-        </encoder>
-    </appender>
+        <appender name="TX_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/transaction.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/transaction.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>14</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger - %msg%n</pattern>
+            </encoder>
+        </appender>
 
-    <!-- ================= TRANSACTION LOG ================= -->
-    <appender name="TX_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/transaction.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/transaction.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>14</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%X{traceId}] %-5level [%thread] %logger - %msg%n</pattern>
-        </encoder>
-    </appender>
+        <appender name="JOB_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/jobs.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/jobs.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>14</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger - %msg%n</pattern>
+            </encoder>
+        </appender>
 
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%clr(%d{HH:mm:ss.SSS}){faint} [%X{traceId}] %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n</pattern>
+            </encoder>
+        </appender>
 
-    <!-- ================= JOB LOG ================= -->
-    <appender name="JOB_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/jobs.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/jobs.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>14</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger - %msg%n</pattern>
-        </encoder>
-    </appender>
+        <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+            <appender-ref ref="SQL_FILE"/>
+        </logger>
 
+        <logger name="org.springframework.transaction" level="TRACE" additivity="false">
+            <appender-ref ref="TX_FILE"/>
+        </logger>
 
-    <!-- ================= RATE LIMIT LOG ================= -->
-<!--    <appender name="RATE_LIMIT_FILE"-->
-<!--              class="ch.qos.logback.core.rolling.RollingFileAppender">-->
-<!--        <file>${LOG_PATH}/rate-limit.log</file>-->
-<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
-<!--            <fileNamePattern>${LOG_PATH}/rate-limit.%d{yyyy-MM-dd}.log</fileNamePattern>-->
-<!--            <maxHistory>14</maxHistory>-->
-<!--        </rollingPolicy>-->
-<!--        <encoder>-->
-<!--            <pattern>%d{HH:mm:ss.SSS} [%X{traceId}] %-5level %msg%n</pattern>-->
-<!--        </encoder>-->
-<!--    </appender>-->
+        <logger name="com.datarain.pdp.job" level="INFO" additivity="false">
+            <appender-ref ref="JOB_FILE"/>
+        </logger>
 
-<!--    <logger name="RATE_LIMIT" level="WARN" additivity="false">-->
-<!--        <appender-ref ref="RATE_LIMIT_FILE"/>-->
-<!--    </logger>-->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="APP_FILE"/>
+            <appender-ref ref="ERROR_FILE"/>
+        </root>
+            </else>
+        </if>
+    </springProfile>
 
+    <!-- ===================== PROD PROFILE (JSON) ===================== -->
+    <springProfile name="prod">
+        <if condition='property("LOGGING_ENABLED").equals("false")'>
+            <then>
+                <appender name="CONSOLE_BASE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+                    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                        <jsonFactoryDecorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+                            <maskPattern>(?i)\"(authorization|password|jwt|token)\"\\s*:\\s*\"(.*?)\"</maskPattern>
+                        </jsonFactoryDecorator>
+                    </encoder>
+                </appender>
 
-    <!-- ================= CONSOLE ================= -->
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%clr(%d{HH:mm:ss.SSS}){faint} [%X{traceId}] %clr(%-5level) %clr(%logger{36}){cyan} - %msg%n
-            </pattern>
-        </encoder>
-    </appender>
+                <logger name="org.springframework" level="INFO" additivity="false">
+                    <appender-ref ref="CONSOLE_BASE_JSON"/>
+                </logger>
+                <logger name="org.springframework.boot" level="INFO" additivity="false">
+                    <appender-ref ref="CONSOLE_BASE_JSON"/>
+                </logger>
 
+                <root level="OFF"/>
+            </then>
+            <else>
+        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <jsonFactoryDecorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+                    <maskPattern>(?i)\"(authorization|password|jwt|token)\"\\s*:\\s*\"(.*?)\"</maskPattern>
+                </jsonFactoryDecorator>
+            </encoder>
+        </appender>
 
-    <!-- ================= LOGGERS ================= -->
+        <appender name="APP_FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/app.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>14</maxHistory>
+            </rollingPolicy>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <jsonFactoryDecorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+                    <maskPattern>(?i)\"(authorization|password|jwt|token)\"\\s*:\\s*\"(.*?)\"</maskPattern>
+                </jsonFactoryDecorator>
+            </encoder>
+        </appender>
 
-    <!-- Hibernate SQL -->
-    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
-        <appender-ref ref="SQL_FILE"/>
-    </logger>
+        <appender name="ERROR_FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH}/error.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+            </rollingPolicy>
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>ERROR</level>
+            </filter>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <jsonFactoryDecorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+                    <maskPattern>(?i)\"(authorization|password|jwt|token)\"\\s*:\\s*\"(.*?)\"</maskPattern>
+                </jsonFactoryDecorator>
+            </encoder>
+        </appender>
 
-    <!-- Transaction logs -->
-    <logger name="org.springframework.transaction" level="TRACE" additivity="false">
-        <appender-ref ref="TX_FILE"/>
-    </logger>
-
-
-    <logger name="com.datarain.pdp.job" level="INFO" additivity="false">
-        <appender-ref ref="JOB_FILE"/>
-    </logger>
-
-
-    <!-- Root logger -->
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="APP_FILE"/>
-        <appender-ref ref="ERROR_FILE"/>
-    </root>
-
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON"/>
+            <appender-ref ref="APP_FILE_JSON"/>
+            <appender-ref ref="ERROR_FILE_JSON"/>
+        </root>
+            </else>
+        </if>
+    </springProfile>
 </configuration>

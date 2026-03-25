@@ -33,6 +33,8 @@ public class PdpMetrics {
     @Getter private final Counter signalNormalizationSignalsNormalizedCounter;
     @Getter private final Counter testDataDailyBehaviorSeedCounter;
     @Getter private final Counter adminSystemOverviewCounter;
+    @Getter private final Counter adminJobControlViewedCounter;
+    @Getter private final Counter adminJobControlUpdatedCounter;
 
     // timers - برای اندازه‌گیری زمان عملیات‌های مهم
     @Getter private final Timer authLoginTimer;
@@ -111,6 +113,14 @@ public class PdpMetrics {
 
         this.adminSystemOverviewCounter = Counter.builder("pdp.admin.system_overview")
                 .description("تعداد درخواست های admin system overview")
+                .register(registry);
+
+        this.adminJobControlViewedCounter = Counter.builder("pdp.admin.job_control.viewed")
+                .description("تعداد درخواست های مشاهده تنظیمات job")
+                .register(registry);
+
+        this.adminJobControlUpdatedCounter = Counter.builder("pdp.admin.job_control.updated")
+                .description("تعداد تغییرات در تنظیمات job")
                 .register(registry);
 
         this.authLoginTimer = Timer.builder("pdp.auth.login.duration")
