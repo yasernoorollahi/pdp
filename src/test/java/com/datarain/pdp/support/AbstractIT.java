@@ -18,8 +18,8 @@ public abstract class AbstractIT {
 
     @BeforeAll
     void resetDatabaseOnce() {
-        flyway.clean();
-        flyway.migrate();
+//        flyway.clean();
+//        flyway.migrate();
         RestAssured.filters(new ColorRestAssuredFilter());
     }
 }

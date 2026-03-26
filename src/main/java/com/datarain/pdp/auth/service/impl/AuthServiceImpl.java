@@ -73,6 +73,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(noRollbackFor = InvalidCredentialsException.class)
     public AuthResponse login(LoginRequest request, HttpServletRequest httpRequest) {
         Instant startedAt = Instant.now();
         try {
