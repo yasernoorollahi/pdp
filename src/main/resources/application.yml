@@ -84,7 +84,8 @@ otel.logs.exporter: none
 ### ===================== PDP AI Signal =====================
 pdp.ai.extraction.base-url: http://localhost:3000
 pdp.ai.extraction.default-provider: ollama
-pdp.ai.extraction.default-model: qwen2.5:7b
+#pdp.ai.extraction.default-model: qwen2.5:7b
+pdp.ai.extraction.default-model: gemma4:e2b
 pdp.ai.extraction.connect-timeout: 300s
 pdp.ai.extraction.read-timeout: 310s
 
