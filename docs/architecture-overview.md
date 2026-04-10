@@ -17,7 +17,7 @@ This is a Spring Boot monolith organized into clear layers:
 A typical request flow:
 
 ```
-Client -> Filters (TraceId, RateLimit, JWT) -> Controller -> Service -> Repository -> DB
+Client -> Filters (TraceId, JWT, RateLimit) -> Controller -> Service -> Repository -> DB
                                               |-> Metrics/Audit/Event
 ```
 
@@ -37,17 +37,17 @@ User -> PDP UI -> Core API -> AI Signals -> Core API -> DB -> UI
 
 ## Major subsystems
 
-- **Auth & Security**: JWT access tokens, refresh tokens, user roles, account lockouts, security auditing.
+- **Auth & Security**: JWT access tokens, refresh tokens, user roles, configurable account lockouts, security auditing.
 - **Messages & Signals**: user messages are collected and analyzed via AI extraction, then normalized into signals and metrics.
 - **Insights**: aggregates daily behavior metrics into timeline and summary insights.
 - **Jobs**: background jobs for processing, normalization, test data seeding, cleanup.
-- **Observability**: trace IDs, structured logging, micrometer metrics, health endpoints.
+- **Observability**: trace IDs, structured logging, MDC-aware async audit logging, micrometer metrics, health endpoints.
 
 ## External integrations
 
 - **AI Extraction**: HTTP client to an external AI extraction service (`pdp.ai.extraction.*` in config).
 - **Prometheus/Grafana**: metrics via Micrometer and `/actuator/prometheus`.
-- **OpenTelemetry**: tracing config is present in `application.yml`.
+- **OpenTelemetry**: exporter settings are env-driven and can stay disabled in local/dev.
 
 ## Data model overview
 
@@ -64,6 +64,8 @@ Runtime behavior is controlled by `application.yml`:
 
 - Database config
 - JWT settings (secret + access token TTL)
+- Redis and rate-limit settings
+- Lockout settings
 - Job scheduling and batch sizes
 - Extraction provider model
 - Logging levels

@@ -41,11 +41,14 @@ There are two layers of auditing:
 
 - `TraceIdFilter` sets or generates `X-Trace-Id` per request.
 - The trace ID is injected into MDC and included in log patterns (`logback-spring.xml`).
+- The incoming value is normalized before reuse.
+- Async audit execution propagates MDC so audit writes can still be correlated by trace ID.
 - All logs can be correlated by this ID.
 
 Snippet:
 ```java
 String traceId = request.getHeader("X-Trace-Id");
+traceId = normalizeTraceId(traceId);
 if (traceId == null || traceId.isBlank()) traceId = UUID.randomUUID().toString();
 MDC.put(TRACE_ID, traceId);
 response.setHeader("X-Trace-Id", traceId);
@@ -55,16 +58,16 @@ response.setHeader("X-Trace-Id", traceId);
 
 - Implemented as a `OncePerRequestFilter`.
 - Uses a per-path policy (`RateLimitPolicyProvider`).
-- Key is either user email (if authenticated) or client IP.
-- Returns HTTP 429 with JSON error body.
-
-Limit strategy is **fixed window in-memory**, which is simple but not cluster-safe.
+- Policies are property-driven and define both limit and scope (`IP`, `USER`, `USER_OR_IP`).
+- Main backend is Redis fixed-window counting, with in-memory fallback if Redis is unavailable.
+- The filter now runs after JWT authentication so authenticated requests can be keyed correctly by user.
+- Returns HTTP 429 with JSON error body plus `Retry-After` and `X-RateLimit-*` headers.
 
 ## API Flow (end-to-end)
 
 1. **TraceIdFilter** assigns/propagates a trace ID.
-2. **RateLimitFilter** enforces per-endpoint limits.
-3. **JwtAuthenticationFilter** authenticates if Bearer token is present.
+2. **JwtAuthenticationFilter** authenticates if Bearer token is present.
+3. **RateLimitFilter** enforces per-endpoint limits using the resolved user/IP scope.
 4. **Controller** validates input and calls a service.
 5. **Service** applies business logic, metrics, audits, and repository calls.
 6. **Repository** reads/writes the database.
@@ -72,8 +75,8 @@ Limit strategy is **fixed window in-memory**, which is simple but not cluster-sa
 ```
 HTTP request
   -> TraceIdFilter
-  -> RateLimitFilter
   -> JwtAuthenticationFilter
+  -> RateLimitFilter
   -> Controller
   -> Service (+ metrics/audit/events)
   -> Repository -> DB

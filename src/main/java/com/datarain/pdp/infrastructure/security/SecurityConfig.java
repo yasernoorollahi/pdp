@@ -8,6 +8,7 @@ import com.datarain.pdp.infrastructure.logging.TraceIdFilter;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -43,6 +44,7 @@ public class SecurityConfig {
         http
                 // REST API هستیم
                 .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
 
@@ -71,6 +73,7 @@ public class SecurityConfig {
 
                         // 🔓 Swagger آزاد
                         .requestMatchers(
+                                "/swagger",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
@@ -82,8 +85,8 @@ public class SecurityConfig {
 
                 // فیلترها
                 .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

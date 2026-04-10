@@ -24,19 +24,17 @@ import java.time.temporal.ChronoUnit;
 @RequiredArgsConstructor
 public class AccountLockoutService {
 
-    private static final int MAX_FAILED_ATTEMPTS = 5;
-    private static final int LOCK_DURATION_MINUTES = 15;
-
     private final UserRepository userRepository;
     private final SecurityAuditService securityAuditService;
+    private final LockoutProperties lockoutProperties;
 
     @Transactional
     public void recordFailedAttempt(User user) {
         int attempts = user.getFailedLoginAttempts() + 1;
         user.setFailedLoginAttempts(attempts);
 
-        if (attempts >= MAX_FAILED_ATTEMPTS && user.getLockedUntil() == null) {
-            user.setLockedUntil(Instant.now().plus(LOCK_DURATION_MINUTES, ChronoUnit.MINUTES));
+        if (attempts >= lockoutProperties.getMaxFailedAttempts() && user.getLockedUntil() == null) {
+            user.setLockedUntil(Instant.now().plus(lockoutProperties.getDuration()));
             log.warn("Account locked due to too many failed attempts: {}", user.getEmail());
             securityAuditService.log(
                     SecurityEventType.ACCOUNT_LOCKED,
@@ -61,13 +59,22 @@ public class AccountLockoutService {
         }
     }
 
-    public void checkAccountLocked(User user) {
+    public void checkAccountLocked(User user, String ipAddress, String userAgent) {
         if (user.isLocked()) {
             log.warn("Login attempt on locked account: {}", user.getEmail());
+            securityAuditService.log(
+                    SecurityEventType.LOGIN_BLOCKED,
+                    user.getEmail(),
+                    user.getId(),
+                    ipAddress,
+                    userAgent,
+                    "Blocked login attempt on locked account",
+                    false
+            );
             throw new BaseBusinessException(
                     ErrorCode.FORBIDDEN,
                     HttpStatus.FORBIDDEN,
-                    "Account is temporarily locked. Please try again after " + LOCK_DURATION_MINUTES + " minutes.") {};
+                    "Account is temporarily locked. Please try again later.") {};
         }
     }
 }

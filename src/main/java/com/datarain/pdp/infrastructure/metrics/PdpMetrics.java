@@ -131,4 +131,13 @@ public class PdpMetrics {
     public void incrementInsights(String type) {
         registry.counter("pdp.insights.request", "type", type).increment();
     }
+
+    public void incrementRateLimitRejected(String path) {
+        rateLimitHitCounter.increment();
+        registry.counter("pdp.rate_limit.rejected", "path", path).increment();
+    }
+
+    public void incrementAuditFailure(String auditType) {
+        registry.counter("pdp.audit.failure", "type", auditType).increment();
+    }
 }

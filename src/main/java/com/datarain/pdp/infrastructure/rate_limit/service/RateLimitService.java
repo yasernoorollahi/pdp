@@ -1,9 +1,8 @@
 package com.datarain.pdp.infrastructure.rate_limit.service;
 
-import com.datarain.pdp.infrastructure.rate_limit.config.RateLimitConfig;
+import com.datarain.pdp.infrastructure.rate_limit.config.RateLimitPolicy;
 
 public interface RateLimitService {
 
-    void checkRateLimit(String key, RateLimitConfig config);
+    RateLimitDecision checkRateLimit(String key, RateLimitPolicy policy);
 }
-

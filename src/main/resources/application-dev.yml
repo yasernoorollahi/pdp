@@ -6,8 +6,17 @@ spring.datasource.password: pdp123
 ### ===================== JWT (Dev) =====================
 pdp.jwt.secret: ${JWT_SECRET:dev-insecure-secret-please-change-32bytes}
 
+### ===================== Redis (Dev) =====================
+spring.data.redis.host: ${REDIS_HOST:localhost}
+spring.data.redis.port: ${REDIS_PORT:6379}
+
 ### ===================== CORS (Dev) =====================
 app.cors.allowed-origins: http://localhost:5173
+
+### ===================== OpenTelemetry (Dev) =====================
+otel.traces.exporter: none
+otel.metrics.exporter: none
+otel.logs.exporter: none
 
 ### ===================== Console Output (Dev) =====================
 spring.output.ansi.enabled: ALWAYS

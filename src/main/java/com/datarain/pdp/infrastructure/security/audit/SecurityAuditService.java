@@ -1,5 +1,6 @@
 package com.datarain.pdp.infrastructure.security.audit;
 
+import com.datarain.pdp.infrastructure.metrics.PdpMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -19,8 +20,9 @@ import java.util.UUID;
 public class SecurityAuditService {
 
     private final SecurityAuditLogRepository repository;
+    private final PdpMetrics metrics;
 
-    @Async
+    @Async("applicationTaskExecutor")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void log(SecurityEventType eventType, String email, UUID userId,
                     String ipAddress, String userAgent, String details, boolean success) {
@@ -35,7 +37,7 @@ public class SecurityAuditService {
             entry.setSuccess(success);
             repository.save(entry);
         } catch (Exception e) {
-            // لاگ نباید فلو اصلی رو خراب کنه
+            metrics.incrementAuditFailure("security");
             log.error("Failed to save security audit log for event: {}", eventType, e);
         }
     }

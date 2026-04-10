@@ -25,7 +25,7 @@
 - Domain event base types
 
 ### `config`
-- Spring configuration: CORS, JPA auditing, OpenAPI, etc.
+- Spring configuration: async executor, CORS, JPA auditing, OpenAPI, rate-limit/security properties, etc.
 
 ### `exception`
 - Business exceptions and global error handling
@@ -43,7 +43,7 @@ Infrastructure concerns and cross-cutting services:
 - `security/lockout`: account lockout logic
 - `logging`: trace ID filter for request correlation
 - `metrics`: Micrometer counters and timers (PdpMetrics)
-- `rate_limit`: rate limiting filter, policy, and service
+- `rate_limit`: Redis-backed rate limiting filter, policy, and service
 - `external`: HTTP clients (e.g., AI extraction)
 - `job`: background jobs and monitoring
 - `health`: health indicators
