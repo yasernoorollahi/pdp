@@ -25,7 +25,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         // اگر کلاینت خودش traceId فرستاده بود (برای آینده microservice)
-        String traceId = request.getHeader("X-Trace-Id");
+        String traceId = normalizeTraceId(request.getHeader("X-Trace-Id"));
 
         if (traceId == null || traceId.isBlank()) {
             traceId = UUID.randomUUID().toString();
@@ -44,5 +44,15 @@ public class TraceIdFilter extends OncePerRequestFilter {
             MDC.remove(TRACE_ID);
         }
     }
-}
 
+    private String normalizeTraceId(String traceId) {
+        if (traceId == null) {
+            return null;
+        }
+        String normalized = traceId.trim();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        return normalized.length() > 128 ? normalized.substring(0, 128) : normalized;
+    }
+}

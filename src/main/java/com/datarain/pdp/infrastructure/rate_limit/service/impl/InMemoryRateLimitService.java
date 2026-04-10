@@ -1,38 +1,44 @@
 package com.datarain.pdp.infrastructure.rate_limit.service.impl;
 
 import com.datarain.pdp.exception.business.RateLimitExceededException;
-import com.datarain.pdp.infrastructure.rate_limit.config.RateLimitConfig;
+import com.datarain.pdp.infrastructure.rate_limit.config.RateLimitPolicy;
+import com.datarain.pdp.infrastructure.rate_limit.service.RateLimitDecision;
 import com.datarain.pdp.infrastructure.rate_limit.service.RateLimitService;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service
+@Service("inMemoryRateLimitService")
 public class InMemoryRateLimitService implements RateLimitService {
 
     private final Map<String, RequestCounter> storage = new ConcurrentHashMap<>();
 
     @Override
-    public void checkRateLimit(String key, RateLimitConfig config) {
-
+    public RateLimitDecision checkRateLimit(String key, RateLimitPolicy policy) {
         long now = System.currentTimeMillis();
+        String storageKey = policy.getId() + ":" + key;
 
         RequestCounter counter = storage.computeIfAbsent(
-                key,
+                storageKey,
                 k -> new RequestCounter(0, now)
         );
 
         synchronized (counter) {
-            if (now - counter.windowStart > config.getDuration().toMillis()) {
+            long windowMs = policy.getDuration().toMillis();
+
+            if (now - counter.windowStart >= windowMs) {
                 counter.reset(now);
             }
 
-            if (counter.count >= config.getLimit()) {
+            if (counter.count >= policy.getLimit()) {
                 throw new RateLimitExceededException();
             }
 
             counter.count++;
+            long remaining = Math.max(0, policy.getLimit() - counter.count);
+            long retryAfterSeconds = Math.max(1, (windowMs - (now - counter.windowStart) + 999) / 1000);
+            return new RateLimitDecision(policy.getLimit(), remaining, retryAfterSeconds);
         }
     }
 
@@ -51,4 +57,3 @@ public class InMemoryRateLimitService implements RateLimitService {
         }
     }
 }
-

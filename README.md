@@ -51,7 +51,7 @@ A deep dive into the architecture and design decisions behind PDP.
 - Java 21
 - Spring Boot 3.5.10
 - Spring Web, Validation, Data JPA, Security, Actuator
-- PostgreSQL + Flyway migrations
+- PostgreSQL + Flyway migrations + Redis
 - JWT (`jjwt`)
 - MapStruct + Lombok
 - Micrometer + Prometheus
@@ -154,9 +154,10 @@ Schema design highlights:
 - Stateless JWT authentication (`Authorization: Bearer ...`)
 - Refresh token rotation + revocation
 - Role/authority checks in route config + method-level `@PreAuthorize`
-- Login lockout policy after repeated failures
-- Async security audit trail persisted in DB
-- Request rate limiting (policy-by-path)
+- Login lockout policy after repeated failures, configurable by properties
+- Async security audit trail persisted in DB with MDC-aware async execution
+- Request rate limiting with Redis-backed fixed-window counters and in-memory fallback
+- Per-request trace IDs returned in `X-Trace-Id`
 
 ## Observability
 
@@ -164,6 +165,7 @@ Schema design highlights:
 - Prometheus scraping through `/actuator/prometheus`
 - Grafana in docker-compose for dashboards
 - Job success/failure/duration metrics
+- Rate-limit and audit-failure metrics
 - Admin monitoring APIs for business + system overview
 
 ## Local Development
@@ -179,6 +181,8 @@ Schema design highlights:
 ```bash
 docker compose up -d postgres redis
 ```
+
+Redis is used by the distributed rate limiter in normal local runs.
 
 ### Run Application
 
@@ -224,6 +228,7 @@ Before publishing or deploying publicly:
 - Move secrets to env/secret manager (never commit)
 - Disable or tightly control test-data seeding in production
 - Restrict Swagger/Actuator exposure by environment
+- Keep `spring.flyway.clean-disabled=true` outside local-only throwaway setups
 - Ensure `logs/` and `target/` are excluded from commits
 - Review migration seed data (default admin seed policy)
 - Tune rate limits and lockout thresholds for your traffic profile

@@ -14,14 +14,9 @@
                     </encoder>
                 </appender>
 
-                <logger name="org.springframework" level="INFO" additivity="false">
+                <root level="INFO">
                     <appender-ref ref="CONSOLE_BASE"/>
-                </logger>
-                <logger name="org.springframework.boot" level="INFO" additivity="false">
-                    <appender-ref ref="CONSOLE_BASE"/>
-                </logger>
-
-                <root level="OFF"/>
+                </root>
             </then>
             <else>
         <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -121,14 +116,9 @@
                     </encoder>
                 </appender>
 
-                <logger name="org.springframework" level="INFO" additivity="false">
+                <root level="INFO">
                     <appender-ref ref="CONSOLE_BASE_JSON"/>
-                </logger>
-                <logger name="org.springframework.boot" level="INFO" additivity="false">
-                    <appender-ref ref="CONSOLE_BASE_JSON"/>
-                </logger>
-
-                <root level="OFF"/>
+                </root>
             </then>
             <else>
         <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">

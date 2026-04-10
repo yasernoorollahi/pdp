@@ -3,37 +3,26 @@ package com.datarain.pdp.infrastructure.rate_limit.config;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 public class RateLimitPolicyProvider {
 
-    public RateLimitConfig resolve(HttpServletRequest request) {
+    private final List<RateLimitPolicy> policies;
 
+    public RateLimitPolicyProvider(RateLimitProperties properties) {
+        this.policies = properties.getPolicies().stream()
+                .sorted(Comparator.comparingInt((RateLimitPolicy policy) -> policy.getPathPrefix().length()).reversed())
+                .toList();
+    }
+
+    public Optional<RateLimitPolicy> resolve(HttpServletRequest request) {
         String path = request.getRequestURI();
 
-
-        //ترتیب تعریف باید اینجوری باشه : specific → general
-        if (path.startsWith("/api/auth/login")) {
-            return new RateLimitConfig(100, Duration.ofMinutes(1));
-        }
-
-        if (path.startsWith("/api/auth")) {
-            return new RateLimitConfig(50, Duration.ofMinutes(1));
-        }
-
-        if (path.startsWith("/api/user-messages")) {
-            return new RateLimitConfig(100, Duration.ofMinutes(1));
-        }
-
-        if (path.startsWith("/api/extraction")) {
-            return new RateLimitConfig(50, Duration.ofMinutes(1));
-        }
-
-        if (path.startsWith("/api/admin/jobs")) {
-            return new RateLimitConfig(200, Duration.ofMinutes(1));
-        }
-
-        return new RateLimitConfig(100, Duration.ofMinutes(1));
+        return policies.stream()
+                .filter(policy -> path.startsWith(policy.getPathPrefix()))
+                .findFirst();
     }
 }

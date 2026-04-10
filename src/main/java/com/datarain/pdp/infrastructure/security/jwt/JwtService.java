@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Slf4j
@@ -24,10 +25,13 @@ public class JwtService {
     private final long accessTokenExpirationMs;
 
     public JwtService(
-            @Value("${pdp.jwt.secret:super-secret-key-that-must-be-at-least-32-chars-long}") String secret,
+            @Value("${pdp.jwt.secret}") String secret,
             @Value("${pdp.jwt.access-token-expiration-ms:900000}") long accessTokenExpirationMs
     ) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        if (secret == null || secret.length() < 32) {
+            throw new IllegalStateException("pdp.jwt.secret must be configured with at least 32 characters");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessTokenExpirationMs = accessTokenExpirationMs;
     }
 

@@ -13,12 +13,13 @@ Defines Spring Security filter chain and access rules for the API.
 - **CSRF, formLogin, httpBasic disabled** because the app is pure REST.
 - **Actuator**: health is public; other endpoints require `ROLE_ADMIN`.
 - **Swagger** is public to simplify API exploration.
-- **Custom filters**: rate limiting and JWT auth are placed before `UsernamePasswordAuthenticationFilter`.
+- **Custom filters**: trace ID runs first, JWT auth runs before rate limiting, and both still short-circuit before controller code.
 
 ### Core configuration snippet
 ```java
 http
   .csrf(csrf -> csrf.disable())
+  .cors(Customizer.withDefaults())
   .formLogin(form -> form.disable())
   .httpBasic(basic -> basic.disable())
   .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -26,11 +27,12 @@ http
       .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
       .requestMatchers(EndpointRequest.to("health")).permitAll()
       .requestMatchers(EndpointRequest.toAnyEndpoint()).hasAuthority("ROLE_ADMIN")
-      .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+      .requestMatchers("/swagger", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
       .anyRequest().authenticated()
   )
-  .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-  .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+  .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
+  .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+  .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
 ```
 
 ### Why this design
@@ -63,8 +65,9 @@ File: `src/main/java/com/datarain/pdp/infrastructure/security/jwt/JwtAuthenticat
 1. Read `Authorization` header.
 2. If not `Bearer ...`, pass through.
 3. Extract username from JWT.
-4. If SecurityContext is empty, load user and validate token.
-5. Build `UsernamePasswordAuthenticationToken` and set it on SecurityContext.
+4. If token parsing fails, clear context and continue without converting it to a 500.
+5. If SecurityContext is empty, load user and validate token.
+6. Build `UsernamePasswordAuthenticationToken` and set it on SecurityContext.
 
 Snippet:
 ```java
@@ -138,35 +141,38 @@ File: `src/main/java/com/datarain/pdp/infrastructure/rate_limit/filter/RateLimit
 
 **Flow**
 1. Resolve policy based on request path.
-2. Resolve key: authenticated user email or IP address.
+2. Resolve key according to policy scope: authenticated user, IP, or fallback user-or-IP.
 3. Call `RateLimitService.checkRateLimit(...)`.
-4. If limit exceeded, return `429` JSON response and increment metric.
+4. Write `X-RateLimit-*` headers on success.
+5. If limit exceeded, return `429` JSON response, `Retry-After`, and increment metrics.
 
 Snippet:
 ```java
-RateLimitConfig config = policyProvider.resolve(request);
-String key = resolveKey(request);
-rateLimitService.checkRateLimit(key, config);
+RateLimitPolicy policy = policyProvider.resolve(request).orElseThrow();
+String key = resolveKey(request, policy);
+RateLimitDecision decision = rateLimitService.checkRateLimit(key, policy);
 ```
 
 ### RateLimitPolicyProvider
 File: `.../rate_limit/config/RateLimitPolicyProvider.java`
 
 - Defines per-endpoint limits, from specific to general.
-- Example: `/api/auth/login` has the strictest policy.
+- Policies come from `pdp.rate-limit.*` properties and are sorted from most specific path prefix to least specific.
+- Example: `/api/auth/login` is IP-scoped and stricter than the generic `/api/auth` policy.
 
 ### InMemoryRateLimitService
 File: `.../rate_limit/service/impl/InMemoryRateLimitService.java`
 
 - Uses in-memory counters with a fixed window.
 - Synchronized per key to keep correctness.
-- Simple but resets on restart and does not scale horizontally.
+- Used as fallback when Redis is disabled or unavailable.
 
 ### RedisRateLimitService
 File: `.../rate_limit/service/impl/RedisRateLimitService.java`
 
-- Placeholder class (not implemented).
-- Intended to show that multiple implementations can exist.
+- Primary implementation for distributed fixed-window limits.
+- Uses Redis `INCR` + `PEXPIRE` in a Lua script for atomic updates.
+- Falls back to the in-memory limiter if Redis cannot be reached.
 
 ## Controllers (pattern)
 
@@ -223,4 +229,4 @@ File: `src/main/java/com/datarain/pdp/infrastructure/metrics/PdpMetrics.java`
 
 - A central registry of counters and timers used by services.
 - Exposed via `/actuator/prometheus` for dashboards.
-- Used by Auth, Extraction, Signal Engine, Insights, etc.
+- Used by Auth, Extraction, Signal Engine, Insights, audit failure tracking, and rate-limit rejection tracking.

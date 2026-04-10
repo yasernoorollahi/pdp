@@ -1,6 +1,6 @@
 spring.flyway.enabled: true
 spring.flyway.locations: classpath:db/migration
-spring.flyway.clean-disabled: false
+spring.flyway.clean-disabled: true
 
 spring.datasource.url: jdbc:postgresql://localhost:5432/pdp_test
 spring.datasource.username: pdp_test_user
@@ -8,6 +8,9 @@ spring.datasource.password: pdp123
 
 spring.jpa.hibernate.ddl-auto: validate
 spring.jpa.show-sql: true
+
+pdp.jwt.secret: test-insecure-secret-that-is-at-least-32-characters
+pdp.rate-limit.redis-enabled: false
 
 jobs.ai-signal-engine.enabled: false
 jobs.signal-normalization.enabled: false

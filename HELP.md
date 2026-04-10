@@ -26,6 +26,7 @@
 
 ### JWT
 - Access Token شامل `email`, `userId`, `roles` است.
+- `pdp.jwt.secret` اجباری است و باید حداقل ۳۲ کاراکتر باشد.
 - زمان انقضای Access Token از کانفیگ خوانده می‌شود:
   - `pdp.jwt.access-token-expiration-ms` پیش‌فرض `900000` میلی‌ثانیه (۱۵ دقیقه).
 
@@ -47,10 +48,14 @@
 
 ### قفل شدن اکانت (Account Lockout)
 منطق اصلی در `AccountLockoutService` پیاده شده است:
-- بعد از ۵ تلاش ناموفق (`MAX_FAILED_ATTEMPTS = 5`) اکانت برای ۱۵ دقیقه قفل می‌شود.
-- قفل شدن با مقداردهی `lockedUntil = now + 15min` انجام می‌شود.
+- به صورت پیش‌فرض بعد از ۵ تلاش ناموفق اکانت برای ۱۵ دقیقه قفل می‌شود.
+- این مقادیر از کانفیگ می‌آیند:
+  - `pdp.security.lockout.max-failed-attempts`
+  - `pdp.security.lockout.duration`
+- قفل شدن با مقداردهی `lockedUntil = now + duration` انجام می‌شود.
 - در هر لاگین موفق، شمارنده تلاش‌های ناموفق ریست می‌شود.
 - اگر اکانت قفل باشد، لاگین با خطای `FORBIDDEN` رد می‌شود.
+- تلاش ورود روی اکانت قفل‌شده با رویداد `LOGIN_BLOCKED` هم audit می‌شود.
 - ادمین می‌تواند اکانت را دستی باز کند:
   - `POST /api/users/{id}/unlock`
 
@@ -63,15 +68,16 @@
 هیچ Retry خودکار برای ورود کاربران وجود ندارد.
 
 ## Rate Limit
-- پیاده‌سازی فعلی In‑Memory است (`InMemoryRateLimitService`).
+- پیاده‌سازی اصلی Redis-based است (`RedisRateLimitService`) و اگر Redis در دسترس نباشد به `InMemoryRateLimitService` fallback می‌کند.
 - کلید محدودسازی:
-  - اگر کاربر لاگین باشد: `auth.getName()`
-  - در غیر این صورت: `IP`
-- سیاست‌ها (`RateLimitPolicyProvider`):
-  - `/api/auth/login` → 50 درخواست در ۱ دقیقه
-  - `/api/auth/**` → 20 درخواست در ۱ دقیقه
-  - سایر مسیرها → 50 درخواست در ۱ دقیقه
-- در صورت عبور از حد، پاسخ 429 با JSON تمیز برمی‌گردد.
+  - بسته به policy می‌تواند `USER`, `IP`, یا `USER_OR_IP` باشد.
+  - برای localhost، loopback normalize می‌شود و key تمیزتری مثل `127.0.0.1` می‌سازد.
+- سیاست‌ها (`RateLimitPolicyProvider`) از `pdp.rate-limit.*` می‌آیند و پیش‌فرض‌های مهمشان این‌هاست:
+  - `/api/auth/login` → 10 درخواست در ۱ دقیقه بر اساس IP
+  - `/api/auth/refresh` → 30 درخواست در ۱ دقیقه
+  - `/api/user-messages` → 120 درخواست در ۱ دقیقه
+  - `/api/extraction` → 30 درخواست در ۱ دقیقه
+- در صورت عبور از حد، پاسخ 429 با JSON برمی‌گردد و headerهای `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` هم ست می‌شوند.
 
 ## کاربران
 - `GET /api/users` (ادمین) → لیست کاربران با DTO امن
@@ -88,14 +94,17 @@
 
 ## لاگ امنیتی (Security Audit Log)
 - همه رویدادهای امنیتی به صورت Async ذخیره می‌شوند.
+- Async execution از executor اختصاصی با MDC propagation استفاده می‌کند تا `traceId` در branchهای async هم حفظ شود.
 - جدول جداگانه `security_audit_logs` دارد.
-- رویدادهای مهم: `LOGIN_SUCCESS`, `LOGIN_FAILED`, `TOKEN_REFRESH`, ...
+- رویدادهای مهم: `LOGIN_SUCCESS`, `LOGIN_FAILED`, `LOGIN_BLOCKED`, `TOKEN_REFRESH`, ...
 
 ## Metrics و مانیتورینگ
 ### Metrics سفارشی (Micrometer)
 - `pdp.auth.login.success`
 - `pdp.auth.login.failed`
 - `pdp.rate_limit.hit`
+- `pdp.rate_limit.rejected`
+- `pdp.audit.failure`
 - `pdp.auth.token.refresh`
 - تایمرها:
   - `pdp.auth.login.duration`
@@ -134,6 +143,7 @@
   - `timestamp`, `status`, `error`, `code`, `message`, `path`, `traceId`
 - خطاهای اعتبارسنجی به صورت لیست فیلدها برمی‌گردند.
 - `traceId` از `TraceIdFilter` در Header و MDC اضافه می‌شود.
+- اگر کلاینت `X-Trace-Id` بفرستد، مقدارش normalize می‌شود و دوباره در response برگردانده می‌شود.
 
 ## پایگاه داده
 - Flyway فعال است (`db/migration/V1__baseline.sql`).
@@ -151,13 +161,14 @@
 ## راه‌اندازی محلی (Docker Compose)
 فایل `docker-compose.yml` شامل این سرویس‌ها است:
 - PostgreSQL
-- Redis (فعلاً برای Rate Limit استفاده نشده)
+- Redis (برای Rate Limit توزیع‌شده)
 - Prometheus
 - Grafana
 - App
 
-نکته: در `application.yml` دیتابیس پیش‌فرض `pdp_upgrade` است ولی Docker روی `pdp` بالا می‌آید.
-اگر با Docker اجرا می‌کنید، مقدار `SPRING_DATASOURCE_URL` در compose ست شده است.
+نکته:
+- در config پایه، `spring.flyway.clean-disabled=true` نگه داشته شده تا پاک‌کردن migration state به‌صورت ناخواسته در محیط‌های واقعی باز نباشد.
+- اگر با Docker اجرا می‌کنید، مقدار `SPRING_DATASOURCE_URL` در compose ست شده است.
 
 ---
 

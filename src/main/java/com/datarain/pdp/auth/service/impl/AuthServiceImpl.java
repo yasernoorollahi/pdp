@@ -88,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
                         return new InvalidCredentialsException();
                     });
 
-            lockoutService.checkAccountLocked(user);
+            lockoutService.checkAccountLocked(user, ip, device);
 
             if (!user.isEnabled()) {
                 throw new AccountDisabledException();
